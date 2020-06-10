@@ -1,9 +1,12 @@
+const axios = require('axios');
+
 module.exports = [
     {
         method: 'POST',
         path: '/slash-commands/scrabble',
         handler: async (request) => {
             const textToConvert = request.payload.text;
+            const responseURL = request.payload.response_url;
 
             let result = '';
             let skip = ['.', ',', '\'', '?', '-'];
@@ -25,10 +28,12 @@ module.exports = [
                 result += (` :${char}:`);
             }
 
-            return {
+            axios.post(responseURL, {
                 response_type: 'in_channel',
                 text: result
-            };
+            });
+
+            return '';
         }
     }
 ];

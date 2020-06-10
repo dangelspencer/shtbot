@@ -21,6 +21,7 @@
   "homepage": "https://github.com/dangelspencer/shtbot#readme",
   "dependencies": {
     "@hapi/hapi": "^19.1.1",
+    "axios": "^0.19.2",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^4.4.2"
   },
