@@ -1,0 +1,2 @@
+# shtbot
+SHT shitposting slackbot
