@@ -27,13 +27,11 @@ module.exports = [
                 }
                 result += (` :${char}:`);
             }
-
-            axios.post(responseURL, {
+            
+            return {
                 response_type: 'in_channel',
                 text: result
-            });
-
-            return '';
+            };
         }
     }
 ];
