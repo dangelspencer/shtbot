@@ -4,6 +4,8 @@
   "description": "SHT shitposting slackbot",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,5 +18,13 @@
   "bugs": {
     "url": "https://github.com/dangelspencer/shtbot/issues"
   },
-  "homepage": "https://github.com/dangelspencer/shtbot#readme"
+  "homepage": "https://github.com/dangelspencer/shtbot#readme",
+  "dependencies": {
+    "@hapi/hapi": "^19.1.1",
+    "winston": "^3.2.1",
+    "winston-daily-rotate-file": "^4.4.2"
+  },
+  "devDependencies": {
+    "eslint": "^7.2.0"
+  }
 }
