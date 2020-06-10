@@ -7,8 +7,9 @@ module.exports = [
         handler: async (request) => {
             const textToConvert = request.payload.text;
             const responseURL = request.payload.response_url;
+            const userName = request.payload.user_name;
 
-            let result = '';
+            let result = `*${userName}:*\n`;
             let skip = ['.', ',', '\'', '?', '-'];
             for (let i = 0; i < textToConvert.length; i++) {
                 let char = textToConvert.charAt(i).toLowerCase();
@@ -27,11 +28,13 @@ module.exports = [
                 }
                 result += (` :${char}:`);
             }
-            
-            return {
+
+            axios.post(responseURL, {
                 response_type: 'in_channel',
                 text: result
-            };
+            });
+
+            return '';
         }
     }
 ];
