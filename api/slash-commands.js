@@ -9,7 +9,7 @@ module.exports = [
             const responseURL = request.payload.response_url;
             const userName = request.payload.user_name;
 
-            let result = `*${userName}:* `;
+            let result = `*${userName}:*\n`;
             let skip = ['.', ',', '\'', '?', '-'];
             for (let i = 0; i < textToConvert.length; i++) {
                 let char = textToConvert.charAt(i).toLowerCase();
