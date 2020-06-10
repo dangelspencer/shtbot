@@ -30,8 +30,8 @@ module.exports = [
             }
 
             axios.post(responseURL, {
-                 response_type: 'in_channel',
-                 text: result
+                response_type: 'in_channel',
+                text: result
             });
 
             return '';
