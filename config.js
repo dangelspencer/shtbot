@@ -6,5 +6,8 @@ module.exports = {
     server: {
         host: process.env.SERVER_HOST || '0.0.0.0',
         port: process.env.SERVER_PORT != null ? parseInt(process.env.SERVER_PORT) : 3000
+    },
+    slack: {
+        botUserToken: process.env.BOT_USER_TOKEN
     }
 };
