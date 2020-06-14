@@ -89,6 +89,39 @@ const routes = [
                 text: 'Invalid command format\nUsage: /sayas @<user> <text>'
             };
         }
+    },
+    {
+        method: 'POST',
+        path: '/mock',
+        handler: async (request) => {
+            const logger = request.app.logger;
+
+            const channel = request.payload.channel_id;
+            const textToConvert = request.payload.text;
+            const userId = request.payload.user_id;
+            const username = request.payload.user_name;
+
+            // convert text
+            const textConverterHelper = await request.app.getNewTextConverterHelper();
+            const result = await textConverterHelper.textToMockingText(textToConvert);
+
+            // get user details from slack
+            const slackService = await request.app.getNewSlackService();
+            const user = await slackService.getUserById(request.payload.user_id);
+
+            logger.info(`COMMAND: <@${userId}|${username}> /mock "${textToConvert}"`);
+
+            // post message as user
+            await slackService.postToChannel({
+                response_type: 'in_channel',
+                text: result,
+                username: user.profile.real_name,
+                icon_url: user.profile.image_original,
+                channel
+            });
+
+            return '';
+        }
     }
 ];
 

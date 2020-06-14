@@ -31,6 +31,20 @@ class TextConverterHelper {
 
         return result.trim();
     }
+    static async textToMockingText(text) {
+        let result = '';
+        let nonLetterCount = 0; //used to ignore non letters when alternating upper and lower case
+        for (let i = 0; i < text.length; i++) {
+            let char = ((i-nonLetterCount) % 2) ? text.charAt(i).toUpperCase() : text.charAt(i).toLowerCase();
+            result += char;
+
+            if (char.toLowerCase() === char.toUpperCase()) {
+                nonLetterCount++;
+            }
+        }
+
+        return result;
+    }
 }
 
 module.exports = TextConverterHelper;
