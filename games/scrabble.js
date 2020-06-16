@@ -103,30 +103,18 @@ class ScrabbleGame {
             .map((a) => a.value);
         this.logger.debug('done');
 
-
         let gameState = initialState;
-
-        this.logger.debug('distributing initial tiles');
-        // distribute initial tiles to players
-        for (let i = 0; i < 7; i++) {
-            for (const player of gameState.players) {
-                gameState = await this.drawTile(gameState, player.id);
-            }
-        }
-        this.logger.debug('done');
 
         // save game state
         this.logger.debug('saving game');
-        await this.saveGame(gameState);
+        await this.saveGame(initialState);
         this.logger.debug('done');
-        this.logger.debug(JSON.stringify(gameState, null, 4));
-        this.logger.debug(`Remaining tiles: ${gameState.tiles.length}`);
 
         // display initial board
-        const board = await this.getBoardString(gameState);
+        const board = await this.getBoardString(initialState);
 
         let message = gameState.players.map(p => `<@${p.id}|${p.username}>`).join('\n');
-        message += `\n\nA new Scrabble game has been started! <@${gameState.players[0].id}|${gameState.players[0].username}> goes first!`;
+        message += `\n\nA new Scrabble game has been started! <@${initialState.players[0].id}|${initialState.players[0].username}> goes first!`;
         message += `\n\n${board}`;
 
         await this.slackService.postMessage({
@@ -136,38 +124,39 @@ class ScrabbleGame {
 
         // show each player their tiles
         for (const player of gameState.players) {
-            await this.displayPlayerRack(gameState, player.id);
+            await this.displayPlayerRack(player.id);
         }
     }
 
-    async displayPlayerRack(gameState, playerId) {
+    async displayPlayerRack(playerId) {
+        const gameState = await this.loadGame();
+        if (gameState == null) {
+            // TODO: return no game active for channel message
+            return;
+        }
+
         const playerIndex = gameState.players.findIndex(p => p.id === playerId);
-        const playerTiles = gameState.players[playerIndex].tiles.map(t => t === 'blank' ? ':blank:' : t).join(' ');
-        const rack = await textConverterHelper.textToScrabbleTiles(playerTiles);
+        const playerTiles = gameState.players[playerIndex].tiles;
+
+        // ensure player always has 7 tiles
+        while (playerTiles.length < 7) {
+            const index = Math.floor((Math.random() * gameState.tiles.length));
+            const tile = gameState.tiles[index];
+            playerTiles.push(tile);
+            gameState.tiles.splice(index, 1);
+        }
+
+        gameState.players[playerIndex].tiles = playerTiles;
+
+        await this.saveGame(gameState);
+
+        const rack = await textConverterHelper.textToScrabbleTiles(playerTiles.map(t => t === 'blank' ? ':blank:' : t).join(' '));
 
         await this.slackService.postEphemeral({
             text: rack,
             channel: gameState.channel,
             user: gameState.players[playerIndex].id
         });
-    }
-
-    async drawTile(gameState, playerId) {
-        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
-        
-        // clone game state
-        const newGameState = JSON.parse(JSON.stringify(gameState));
-
-        // draw random tile
-        const index = Math.floor((Math.random() * gameState.tiles.length));
-        const tile = gameState.tiles[index];
-
-        // update new game state
-        gameState.tiles.splice(index, 1);
-        newGameState.tiles = gameState.tiles;
-        newGameState.players[playerIndex].tiles.push(tile);
-
-        return newGameState;
     }
 
     async getBoardString(gameState) {

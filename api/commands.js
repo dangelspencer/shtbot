@@ -116,7 +116,7 @@ const routes = [
                     break;
                 case 'rack':
                     const gameState = await scrabbleGame.loadGame();
-                    await scrabbleGame.displayPlayerRack(gameState, userId);
+                    await scrabbleGame.displayPlayerRack(userId);
                     break;
                 default:
                     return {
