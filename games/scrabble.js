@@ -152,7 +152,9 @@ class ScrabbleGame {
         });
     }
 
-    async drawTile(gameState, playerIndex) {
+    async drawTile(gameState, playerId) {
+        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+        
         // clone game state
         const newGameState = JSON.parse(JSON.stringify(gameState));
 
@@ -190,3 +192,9 @@ class ScrabbleGame {
 }
 
 module.exports = ScrabbleGame;
+
+/*
+ * TODO
+ * command for exchanging tiles
+ * command to play a word
+*/

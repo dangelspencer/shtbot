@@ -106,12 +106,23 @@ const routes = [
             const scrabbleGame = await request.app.getNewScrabbleGame();
 
             const commandParts = text.split(' ');
+            const action = commandParts[0].trim().toLowerCase();
 
-            if (commandParts[0].trim().toLowerCase() === 'new-game') {
-                const messageParserHelper = await request.app.getNewMessageParserHelper();
-                const mentions = await messageParserHelper.parseMentions(text);
-                logger.debug(JSON.stringify(mentions, null, 4));
-                await scrabbleGame.startGame(channel, userId, mentions);
+            switch (action) {
+                case 'new-game':
+                    const messageParserHelper = await request.app.getNewMessageParserHelper();
+                    const mentions = await messageParserHelper.parseMentions(text);
+                    await scrabbleGame.startGame(channel, userId, mentions);
+                    break;
+                case 'rack':
+                    const gameState = await scrabbleGame.loadGame(channel);
+                    await scrabbleGame.displayPlayerRack(gameState, userId);
+                    break;
+                default:
+                    return {
+                        response_type: 'ephemeral',
+                        text: `'${action}' is not a valid action`
+                    };
             }
 
             return '';
