@@ -10,11 +10,13 @@ class TextConverterHelper {
             if (word.startsWith('<@') || word.startsWith('<#')) {
                 convertedWords.push(word);
                 continue;
+            } else if (word.startsWith(':') && word.endsWith(':')) {
+                convertedWords.push(word);
+                continue;
             }
 
             for (let i = 0; i < word.length; i++) {
                 let char = word.charAt(i).toLowerCase();
-    
     
                 // handle numbers
                 if (!isNaN(parseInt(char, 10))) {

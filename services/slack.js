@@ -27,7 +27,7 @@ class SlackService {
     }
 
     // post a message to a channel
-    async postToChannel(data) {
+    async postMessage(data) {
         this.logger.debug(`posting to channel: ${data.channel}`);
 
         const requestOptions = {
@@ -49,6 +49,7 @@ class SlackService {
         }
     }
 
+    // delete message in channel by timestamp
     async deleteMessage(channel, ts) {
         this.logger.debug(`deleting message in channel '${channel}' with timestamp '${ts}'`);
 
@@ -69,6 +70,30 @@ class SlackService {
 
         if (!response.data.ok) {
             this.logger.error('Failed to delete message');
+            this.logger.error(response.data);
+            this.logger.error(response.config);
+        }
+    }
+
+
+    // post an ephemeral message to a channel
+    async postEphemeral(data) {
+        this.logger.debug(`posting message to channel '${data.channel}' for user '${data.user}'`);
+
+        const requestOptions = {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${this.config.botUserToken}`,
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            data,
+            url: 'https://slack.com/api/chat.postEphemeral'
+        };
+
+        const response = await axios(requestOptions);
+
+        if (!response.data.ok) {
+            this.logger.error('Failed to post to channel');
             this.logger.error(response.data);
             this.logger.error(response.config);
         }

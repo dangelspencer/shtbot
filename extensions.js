@@ -3,6 +3,7 @@ const logger = require('./logger');
 
 const BotEventProcessor = require('./bot/event-processor');
 const MessageParserHelper = require('./helpers/message-parser');
+const ScrabbleGame = require('./games/scrabble');
 const SlackService = require('./services/slack');
 const TextConverterHelper = require('./helpers/text-converter');
 
@@ -28,6 +29,11 @@ module.exports = {
             request.app.getNewBotEventProcessor = async () => {
                 const slackService = new SlackService(config.slack, logger);
                 return new BotEventProcessor(logger, slackService);
+            };
+            
+            request.app.getNewScrabbleGame = async () => {
+                const slackService = new SlackService(config.slack, logger);
+                return new ScrabbleGame(logger, slackService);
             };
 
             return h.continue;

@@ -21,7 +21,7 @@ const routes = [
             logger.info(`COMMAND: <@${userId}|${username}> /mock "${textToConvert}"`);
 
             // post message as user
-            await slackService.postToChannel({
+            await slackService.postMessage({
                 response_type: 'in_channel',
                 text: result,
                 username: user.profile.real_name,
@@ -73,7 +73,7 @@ const routes = [
                 logger.info(`COMMAND: <@${userId}|${username}> /sayas <@${mentions[0].id}|${mentions[0].username}> "${textToEcho}"`);
 
                 // post a message as that user
-                await slackService.postToChannel({
+                await slackService.postMessage({
                     response_type: 'in_channel',
                     text: textToEcho,
                     username: user.profile.real_name,
@@ -88,6 +88,33 @@ const routes = [
                 response_type: 'ephemeral',
                 text: 'Invalid command format\nUsage: /sayas @<user> <text>'
             };
+        }
+    }, {
+        method: 'POST',
+        path: '/scrabble',
+        handler: async (request) => {
+            const logger = request.app.logger;
+
+
+            const channel = request.payload.channel_id;
+            const text = request.payload.text;
+            const userId = request.payload.user_id;
+            const username = request.payload.user_name;
+
+            logger.info(`COMMAND: <@${userId}|${username}> /scrabble "${text}"`);
+
+            const scrabbleGame = await request.app.getNewScrabbleGame();
+
+            const commandParts = text.split(' ');
+
+            if (commandParts[0].trim().toLowerCase() === 'new-game') {
+                const messageParserHelper = await request.app.getNewMessageParserHelper();
+                const mentions = await messageParserHelper.parseMentions(text);
+                logger.debug(JSON.stringify(mentions, null, 4));
+                await scrabbleGame.startGame(channel, userId, mentions);
+            }
+
+            return '';
         }
     }, {
         method: 'POST',
@@ -111,7 +138,7 @@ const routes = [
             logger.info(`COMMAND: <@${userId}|${username}> /scrabble "${textToConvert}"`);
 
             // post message as user
-            await slackService.postToChannel({
+            await slackService.postMessage({
                 response_type: 'in_channel',
                 text: result,
                 username: user.profile.real_name,
