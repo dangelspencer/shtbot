@@ -8,13 +8,14 @@ const writeFileAsync = util.promisify(fs.writeFile);
 const fileExistsAsync = util.promisify(fs.exists);
 
 class ScrabbleGame {
-    constructor(logger, slackService) {
+    constructor(logger, slackService, channel) {
         this.logger = logger;
         this.slackService = slackService;
+        this.channel = channel;
     }
 
-    async loadGame(channel) {
-        const fileName = `./data/scrabble-${channel}.json`;
+    async loadGame() {
+        const fileName = `./data/scrabble-${this.channel}.json`;
 
         if (await fileExistsAsync(fileName)) {
             return JSON.parse(await readFileAsync(fileName));
@@ -25,7 +26,7 @@ class ScrabbleGame {
 
     async saveGame(gameState) {
         try {
-            const fileName = `./data/scrabble-${gameState.channel}.json`;
+            const fileName = `./data/scrabble-${this.channel}.json`;
             await writeFileAsync(fileName, JSON.stringify(gameState));
         } catch (err) {
             this.logger.error('Failed to save game state');
@@ -34,13 +35,13 @@ class ScrabbleGame {
         }
     }
 
-    async startGame(channel, user, players) {
+    async startGame(user, players) {
         // check for existing game
-        if (await this.loadGame(channel) != null) {
+        if (await this.loadGame() != null) {
             this.logger.warn('Existing game in channel');
             await this.slackService.postEphemeral({
                 text: 'A game is already in progress in this channel',
-                channel: channel,
+                channel: this.channel,
                 user: user
             });
             return;
@@ -51,13 +52,13 @@ class ScrabbleGame {
             this.logger.warn(`Invalid number of players for scrabble: ${players.length}`);
             await this.slackService.postEphemeral({
                 text: 'Invalid number of players\nMust @ 2 - 4 users',
-                channel: channel,
+                channel: this.channel,
                 user: user
             });
             return;
         }
 
-        this.logger.info(`Creating new scrabble game in channel: ${channel}`);
+        this.logger.info(`Creating new scrabble game in channel: ${this.channel}`);
         
         // load initial game state
         this.logger.debug('loading initial game state');
@@ -66,7 +67,7 @@ class ScrabbleGame {
 
         // set the channel for the game
         this.logger.debug('setting channel');
-        initialState.channel = channel;
+        initialState.channel = this.channel;
         this.logger.debug('done');
 
         // randomize player order
@@ -108,8 +109,8 @@ class ScrabbleGame {
         this.logger.debug('distributing initial tiles');
         // distribute initial tiles to players
         for (let i = 0; i < 7; i++) {
-            for (let playerIndex = 0; playerIndex < players.length; playerIndex++) {
-                gameState = await this.drawTile(gameState, playerIndex);
+            for (const player of gameState.players) {
+                gameState = await this.drawTile(gameState, player.id);
             }
         }
         this.logger.debug('done');
@@ -130,7 +131,7 @@ class ScrabbleGame {
 
         await this.slackService.postMessage({
             text: message,
-            channel: channel
+            channel: this.channel
         });
 
         // show each player their tiles
@@ -140,7 +141,6 @@ class ScrabbleGame {
     }
 
     async displayPlayerRack(gameState, playerId) {
-        // TODO: handle blank tiles
         const playerIndex = gameState.players.findIndex(p => p.id === playerId);
         const playerTiles = gameState.players[playerIndex].tiles.map(t => t === 'blank' ? ':blank:' : t).join(' ');
         const rack = await textConverterHelper.textToScrabbleTiles(playerTiles);

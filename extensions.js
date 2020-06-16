@@ -31,9 +31,9 @@ module.exports = {
                 return new BotEventProcessor(logger, slackService);
             };
             
-            request.app.getNewScrabbleGame = async () => {
+            request.app.getNewScrabbleGame = async (channel) => {
                 const slackService = new SlackService(config.slack, logger);
-                return new ScrabbleGame(logger, slackService);
+                return new ScrabbleGame(logger, slackService, channel);
             };
 
             return h.continue;

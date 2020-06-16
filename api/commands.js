@@ -103,7 +103,7 @@ const routes = [
 
             logger.info(`COMMAND: <@${userId}|${username}> /scrabble "${text}"`);
 
-            const scrabbleGame = await request.app.getNewScrabbleGame();
+            const scrabbleGame = await request.app.getNewScrabbleGame(channel);
 
             const commandParts = text.split(' ');
             const action = commandParts[0].trim().toLowerCase();
@@ -112,10 +112,10 @@ const routes = [
                 case 'new-game':
                     const messageParserHelper = await request.app.getNewMessageParserHelper();
                     const mentions = await messageParserHelper.parseMentions(text);
-                    await scrabbleGame.startGame(channel, userId, mentions);
+                    await scrabbleGame.startGame(userId, mentions);
                     break;
                 case 'rack':
-                    const gameState = await scrabbleGame.loadGame(channel);
+                    const gameState = await scrabbleGame.loadGame();
                     await scrabbleGame.displayPlayerRack(gameState, userId);
                     break;
                 default:
