@@ -18,20 +18,19 @@ class ScrabbleGame {
         const fileName = `./data/scrabble-${this.channel}.json`;
 
         if (await fileExistsAsync(fileName)) {
-            return JSON.parse(await readFileAsync(fileName));
+            this.gameState = JSON.parse(await readFileAsync(fileName));
         }
-
-        return null;
     }
 
-    async saveGame(gameState) {
+    // TODO: only save things that have been changed?
+    async saveGame() {
         try {
             const fileName = `./data/scrabble-${this.channel}.json`;
-            await writeFileAsync(fileName, JSON.stringify(gameState));
+            await writeFileAsync(fileName, JSON.stringify(this.gameState));
         } catch (err) {
             this.logger.error('Failed to save game state');
             this.logger.error(err);
-            this.logger.error(gameState);
+            this.logger.error(this.gameState);
         }
     }
 
@@ -103,7 +102,7 @@ class ScrabbleGame {
             .map((a) => a.value);
         this.logger.debug('done');
 
-        let gameState = initialState;
+        this.gameState = initialState;
 
         // save game state
         this.logger.debug('saving game');
@@ -113,7 +112,7 @@ class ScrabbleGame {
         // display initial board
         // const board = await this.getBoardString(initialState);
 
-        // let message = gameState.players.map(p => `<@${p.id}|${p.username}>`).join('\n');
+        // let message = this.gameState.players.map(p => `<@${p.id}|${p.username}>`).join('\n');
         // message += `\n\nA new Scrabble game has been started! <@${initialState.players[0].id}|${initialState.players[0].username}> goes first!`;
         // message += `\n\n${board}`;
 
@@ -123,7 +122,7 @@ class ScrabbleGame {
         // });
 
         // show each player their tiles
-        for (const player of gameState.players) {
+        for (const player of this.gameState.players) {
             await this.displayPlayerRack(player.id);
         }
     }
@@ -131,8 +130,7 @@ class ScrabbleGame {
     async displayPlayerRack(playerId) {
         // TODO: verify player is a part of the game
 
-        const gameState = await this.loadGame();
-        if (gameState == null) {
+        if (this.gameState == null) {
             await this.slackService.postEphemeral({
                 text: 'There is no active scrabble game in this channel',
                 channel: this.channel,
@@ -141,36 +139,36 @@ class ScrabbleGame {
             return;
         }
 
-        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
-        const playerTiles = gameState.players[playerIndex].tiles;
+        const playerIndex = this.gameState.players.findIndex(p => p.id === playerId);
+        const playerTiles = this.gameState.players[playerIndex].tiles;
 
         // ensure player always has 7 tiles
-        while (playerTiles.length < 7 && gameState.tiles.length > 0) {
-            const index = Math.floor((Math.random() * gameState.tiles.length));
-            const tile = gameState.tiles[index];
+        while (playerTiles.length < 7 && this.gameState.tiles.length > 0) {
+            const index = Math.floor((Math.random() * this.gameState.tiles.length));
+            const tile = this.gameState.tiles[index];
             playerTiles.push(tile);
-            gameState.tiles.splice(index, 1);
+            this.gameState.tiles.splice(index, 1);
         }
 
-        gameState.players[playerIndex].tiles = playerTiles;
+        this.gameState.players[playerIndex].tiles = playerTiles;
 
-        await this.saveGame(gameState);
+        await this.saveGame();
 
         const rack = await textConverterHelper.textToScrabbleTiles(playerTiles.map(t => t === 'blank' ? ':blank:' : t).join(' '));
 
         await this.slackService.postEphemeral({
             text: rack,
             channel: this.channel,
-            user: gameState.players[playerIndex].id
+            user: this.gameState.players[playerIndex].id
         });
     }
 
     async reorderPlayerTiles(playerId, newOrder) {
-        // TODO: verify player is a part of the game
-
         // load game
-        const gameState = await this.loadGame();
-        if (gameState == null) {
+        await this.loadGame();
+
+        // verify there is an active game
+        if (this.gameState == null) {
             this.logger.warn(`user '${playerId}' attempted to reorder tile rack without an active game in the channel`);
             await this.slackService.postEphemeral({
                 text: 'There is no active scrabble game in this channel',
@@ -180,9 +178,19 @@ class ScrabbleGame {
             return;
         }
 
-        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
-        const playerTiles = gameState.players[playerIndex].tiles;
+        // verify player is a part of the game
+        const playerIndex = this.gameState.players.findIndex(p => p.id === playerId);
+        if (playerIndex === -1) {
+            await this.slackService.postEphemeral({
+                text: 'You don\'t seem to be a part of this game',
+                channel: this.channel,
+                user: playerId
+            });
+            return;
+        }
 
+        // validate number of tiles in new order
+        const playerTiles = this.gameState.players[playerIndex].tiles;
         if (newOrder.split(' ').length !== playerTiles.length) {
             await this.slackService.postEphemeral({
                 text: 'Tiles must be separated by spaces',
@@ -238,18 +246,19 @@ class ScrabbleGame {
         }
 
         // save new tile order for player
-        gameState.players[playerIndex].tiles = newTiles;
-        await this.saveGame(gameState);
+        this.gameState.players[playerIndex].tiles = newTiles;
+        await this.saveGame();
 
+        // display the new order of tiles to the player
         await this.displayPlayerRack(playerId);
     }
 
     async exchangeTiles(playerId, tiles) {
         // load game
-        const gameState = await this.loadGame();
+        await this.loadGame();
 
         // verify player is a part of the game
-        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+        const playerIndex = this.gameState.players.findIndex(p => p.id === playerId);
         if (playerIndex === -1) {
             await this.slackService.postEphemeral({
                 text: 'You don\'t seem to be a part of this game',
@@ -261,7 +270,7 @@ class ScrabbleGame {
 
         // TODO: verify that it's the current player's turn
 
-        const playerTiles = gameState.players[playerIndex].tiles;
+        const playerTiles = this.gameState.players[playerIndex].tiles;
 
         // make sure the user can't exchange more tiles than they have
         if (tiles.split(' ').length > playerTiles.length) {
@@ -308,7 +317,7 @@ class ScrabbleGame {
         }
 
         // save user rack without the exchanged tiles
-        await this.saveGame(gameState);
+        await this.saveGame();
 
         // display the new rack to the user (draws back up to 7 tiles)
         await this.displayPlayerRack(playerId);
@@ -320,10 +329,12 @@ class ScrabbleGame {
             newGameState.tiles.push(tile);
         }
         await this.saveGame(newGameState);
+
+        // TODO: increment currentPlayer count
     }
 
-    async getBoardString(gameState) {
-        const board = gameState.board;
+    async getBoardString() {
+        const board = this.gameState.board;
         let boardString = '';
         // for each row on the board
         for (const row of board) {
