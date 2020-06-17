@@ -1,6 +1,7 @@
 const config = require('./config');
 const logger = require('./logger');
 
+const BotEventProcessor = require('./bot/event-processor');
 const MessageParserHelper = require('./helpers/message-parser');
 const SlackService = require('./services/slack');
 const TextConverterHelper = require('./helpers/text-converter');
@@ -22,6 +23,11 @@ module.exports = {
 
             request.app.getNewMessageParserHelper = async () => {
                 return MessageParserHelper;
+            };
+
+            request.app.getNewBotEventProcessor = async () => {
+                const slackService = new SlackService(config.slack, logger);
+                return new BotEventProcessor(logger, slackService);
             };
 
             return h.continue;

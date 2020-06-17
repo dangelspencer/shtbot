@@ -48,6 +48,31 @@ class SlackService {
             this.logger.error(response.config);
         }
     }
+
+    async deleteMessage(channel, ts) {
+        this.logger.debug(`deleting message in channel '${channel}' with timestamp '${ts}'`);
+
+        const requestOptions = {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${this.config.botUserToken}`,
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            data: {
+                channel,
+                ts
+            },
+            url: 'https://slack.com/api/chat.delete'
+        };
+
+        const response = await axios(requestOptions);
+
+        if (!response.data.ok) {
+            this.logger.error('Failed to delete message');
+            this.logger.error(response.data);
+            this.logger.error(response.config);
+        }
+    }
 }
 
 module.exports = SlackService;
