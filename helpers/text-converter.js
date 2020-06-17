@@ -13,7 +13,7 @@ class TextConverterHelper {
             }
 
             for (let i = 0; i < word.length; i++) {
-                let char = text.charAt(i).toLowerCase();
+                let char = word.charAt(i).toLowerCase();
     
     
                 // handle numbers
