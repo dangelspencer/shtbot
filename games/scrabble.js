@@ -111,16 +111,16 @@ class ScrabbleGame {
         this.logger.debug('done');
 
         // display initial board
-        const board = await this.getBoardString(initialState);
+        // const board = await this.getBoardString(initialState);
 
-        let message = gameState.players.map(p => `<@${p.id}|${p.username}>`).join('\n');
-        message += `\n\nA new Scrabble game has been started! <@${initialState.players[0].id}|${initialState.players[0].username}> goes first!`;
-        message += `\n\n${board}`;
+        // let message = gameState.players.map(p => `<@${p.id}|${p.username}>`).join('\n');
+        // message += `\n\nA new Scrabble game has been started! <@${initialState.players[0].id}|${initialState.players[0].username}> goes first!`;
+        // message += `\n\n${board}`;
 
-        await this.slackService.postMessage({
-            text: message,
-            channel: this.channel
-        });
+        // await this.slackService.postMessage({
+        //     text: message,
+        //     channel: this.channel
+        // });
 
         // show each player their tiles
         for (const player of gameState.players) {
@@ -129,9 +129,15 @@ class ScrabbleGame {
     }
 
     async displayPlayerRack(playerId) {
+        // TODO: verify player is a part of the game
+
         const gameState = await this.loadGame();
         if (gameState == null) {
-            // TODO: return no game active for channel message
+            await this.slackService.postEphemeral({
+                text: 'There is no active scrabble game in this channel',
+                channel: this.channel,
+                user: playerId
+            });
             return;
         }
 
@@ -139,7 +145,7 @@ class ScrabbleGame {
         const playerTiles = gameState.players[playerIndex].tiles;
 
         // ensure player always has 7 tiles
-        while (playerTiles.length < 7) {
+        while (playerTiles.length < 7 && gameState.tiles.length > 0) {
             const index = Math.floor((Math.random() * gameState.tiles.length));
             const tile = gameState.tiles[index];
             playerTiles.push(tile);
@@ -154,9 +160,166 @@ class ScrabbleGame {
 
         await this.slackService.postEphemeral({
             text: rack,
-            channel: gameState.channel,
+            channel: this.channel,
             user: gameState.players[playerIndex].id
         });
+    }
+
+    async reorderPlayerTiles(playerId, newOrder) {
+        // TODO: verify player is a part of the game
+
+        // load game
+        const gameState = await this.loadGame();
+        if (gameState == null) {
+            this.logger.warn(`user '${playerId}' attempted to reorder tile rack without an active game in the channel`);
+            await this.slackService.postEphemeral({
+                text: 'There is no active scrabble game in this channel',
+                channel: this.channel,
+                user: playerId
+            });
+            return;
+        }
+
+        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+        const playerTiles = gameState.players[playerIndex].tiles;
+
+        if (newOrder.split(' ').length !== playerTiles.length) {
+            await this.slackService.postEphemeral({
+                text: 'Tiles must be separated by spaces',
+                channel: this.channel,
+                user: playerId
+            });
+            return;
+        }
+
+        const newTiles = newOrder
+            .toUpperCase()
+            // handle double character tiles
+            .split('AA').join('A')
+            .split('BB').join('B')
+            .split('MM').join('M')
+            .split('OO').join('O')
+            .split('VV').join('V')
+            .split('XX').join('X')
+
+            // remove spaces and ':'s
+            .split(' ').join('')
+            .split(':').join('')
+            
+            // convert to array
+            .split('');
+
+
+        // validate number of tiles
+        if (newTiles.length !== playerTiles.length) {
+            this.logger.warn(`user '${playerId}' attempted to reorder tile rack with wrong number of tiles`);
+            await this.slackService.postEphemeral({
+                text: 'Number of tiles reordered does not match current number of tiles in rack',
+                channel: this.channel,
+                user: playerId
+            });
+            return;
+        }
+
+        // validate each tile exists in rack
+        for (const tile of newTiles) {
+            const tileIndex = playerTiles.findIndex(t => t === tile);
+            if (tileIndex === -1) {
+                this.logger.warn(`user '${playerId}' attempted to reorder tile rack with the wrong tile`);
+                await this.slackService.postEphemeral({
+                    text: `:${tile.toLowerCase()}: is not in your tile rack`,
+                    channel: this.channel,
+                    user: playerId
+                });
+                return;
+            }
+
+            playerTiles.splice(tileIndex, 1);
+        }
+
+        // save new tile order for player
+        gameState.players[playerIndex].tiles = newTiles;
+        await this.saveGame(gameState);
+
+        await this.displayPlayerRack(playerId);
+    }
+
+    async exchangeTiles(playerId, tiles) {
+        // load game
+        const gameState = await this.loadGame();
+
+        // verify player is a part of the game
+        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+        if (playerIndex === -1) {
+            await this.slackService.postEphemeral({
+                text: 'You don\'t seem to be a part of this game',
+                channel: this.channel,
+                user: playerId
+            });
+            return;
+        }
+
+        // TODO: verify that it's the current player's turn
+
+        const playerTiles = gameState.players[playerIndex].tiles;
+
+        // make sure the user can't exchange more tiles than they have
+        if (tiles.split(' ').length > playerTiles.length) {
+            await this.slackService.postEphemeral({
+                text: 'Unable to exchange: invalid number of tiles',
+                channel: this.channel,
+                user: playerId
+            });
+            return;
+        }
+
+        const exchangedTiles = tiles
+            .toUpperCase()
+            // handle double character tiles
+            .split('AA').join('A')
+            .split('BB').join('B')
+            .split('MM').join('M')
+            .split('OO').join('O')
+            .split('VV').join('V')
+            .split('XX').join('X')
+
+            // remove spaces and ':'s
+            .split(' ').join('')
+            .split(':').join('')
+            
+            // convert to array
+            .split('');
+
+
+        // validate each tile exists in rack
+        for (const tile of exchangedTiles) {
+            const tileIndex = playerTiles.findIndex(t => t === tile);
+            if (tileIndex === -1) {
+                this.logger.warn(`user '${playerId}' attempted to exchange tile that doesn't exist in their rack`);
+                await this.slackService.postEphemeral({
+                    text: `:${tile.toLowerCase()}: is not in your tile rack`,
+                    channel: this.channel,
+                    user: playerId
+                });
+                return;
+            }
+
+            playerTiles.splice(tileIndex, 1);
+        }
+
+        // save user rack without the exchanged tiles
+        await this.saveGame(gameState);
+
+        // display the new rack to the user (draws back up to 7 tiles)
+        await this.displayPlayerRack(playerId);
+
+        // put the exchanged tiles back in the tile list
+        // have to load the game state again to get the changes made in the displayPlayerRack() function
+        const newGameState = await this.loadGame();
+        for (const tile of exchangedTiles) {
+            newGameState.tiles.push(tile);
+        }
+        await this.saveGame(newGameState);
     }
 
     async getBoardString(gameState) {
@@ -184,6 +347,5 @@ module.exports = ScrabbleGame;
 
 /*
  * TODO
- * command for exchanging tiles
  * command to play a word
 */

@@ -115,13 +115,22 @@ const routes = [
                     await scrabbleGame.startGame(userId, mentions);
                     break;
                 case 'rack':
-                    const gameState = await scrabbleGame.loadGame();
+                case 'tiles':
                     await scrabbleGame.displayPlayerRack(userId);
+                    break;
+                case 'reorder':
+                    const newOrder = text.trim().replace('reorder ', '');
+                    await scrabbleGame.reorderPlayerTiles(userId, newOrder);
+                    break;
+                case 'exchange':
+                    const tilesToExchange = text.trim().replace('exchange ', '');
+                    await scrabbleGame.exchangeTiles(userId, tilesToExchange);
                     break;
                 default:
                     return {
                         response_type: 'ephemeral',
                         text: `'${action}' is not a valid action`
+                        // TODO: return valid actions
                     };
             }
 
