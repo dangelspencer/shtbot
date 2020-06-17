@@ -110,16 +110,16 @@ class ScrabbleGame {
         this.logger.debug('done');
 
         // display initial board
-        // const board = await this.getBoardString(initialState);
+        const board = await this.getBoardString(initialState);
 
-        // let message = this.gameState.players.map(p => `<@${p.id}|${p.username}>`).join('\n');
-        // message += `\n\nA new Scrabble game has been started! <@${initialState.players[0].id}|${initialState.players[0].username}> goes first!`;
-        // message += `\n\n${board}`;
+        let message = this.gameState.players.map(p => `<@${p.id}|${p.username}>`).join('\n');
+        message += `\n\nA new Scrabble game has been started! <@${initialState.players[0].id}|${initialState.players[0].username}> goes first!`;
+        message += `\n\n${board}`;
 
-        // await this.slackService.postMessage({
-        //     text: message,
-        //     channel: this.channel
-        // });
+        await this.slackService.postMessage({
+            text: message,
+            channel: this.channel
+        });
 
         // show each player their tiles
         for (const player of this.gameState.players) {
@@ -359,4 +359,6 @@ module.exports = ScrabbleGame;
 /*
  * TODO
  * command to play a word
+ * command to test a word (show potential point value)
+ * command to show game status
 */
