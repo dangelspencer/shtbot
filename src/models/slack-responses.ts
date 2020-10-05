@@ -1,8 +1,11 @@
+import { SlackMessagePostBody } from "./slack-message";
+
 export class GenericSlackResponse {
     ok: boolean;
     error?: string;
 
     user?: SlackUserModel;
+    message?: SlackMessageModel;
 }
 
 export class SlackUserModel {
@@ -42,4 +45,19 @@ export class SlackUserModel {
     updated: number;
     is_app_user: boolean;
     has_2fa: boolean;
+}
+
+export class SlackReactionModel {
+    count: number;
+    name: string;
+    users: [string];
+}
+
+export class SlackMessageModel {
+    type: string;
+    user: string;
+    text: string;
+    ts: string;
+    reactions: [SlackReactionModel];
+    attachments: [any]; // TODO: define this object
 }
