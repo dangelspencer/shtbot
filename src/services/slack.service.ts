@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosRequestConfig } from 'axios';
 import { time } from 'console';
 import { SlackMessagePostBody } from 'src/models/slack-message';
-import { GenericSlackResponse, SlackReactionModel, SlackUserModel } from 'src/models/slack-responses';
+import { GenericSlackResponse, SlackMessageModel, SlackReactionModel, SlackUserModel } from 'src/models/slack-responses';
 import { config } from '../config';
 
 
@@ -16,14 +16,14 @@ export class SlackService {
                 'Content-Type': 'application/json; charset=utf-8'
             },
             data: messageData,
-            url: 'https://slack.com/api/chat.postEphemeral'
+            url: 'https://slack.com/api/chat.postMessage'
         };
 
         const response = await axios.request<GenericSlackResponse>(requestOptions);
+        Logger.verbose(`response from slack API: ${JSON.stringify(response.data)}`);
 
         if (!response.data.ok) {
             Logger.error(`failed to post message to channel: ${messageData.channel}, error: ${response.data.error}`);
-            Logger.debug(JSON.stringify(requestOptions, null, 4));
             throw new Error(`failed to post message to channel: ${messageData.channel}, error: ${response.data.error}`);
         }
 
@@ -38,13 +38,13 @@ export class SlackService {
 
         const queryString = `token=${config.slack.botUserToken}&user=${userId}`;
         const response = await axios.get<GenericSlackResponse>(`https://slack.com/api/users.info?${queryString}`);
+        Logger.verbose(`response from slack API: ${JSON.stringify(response.data)}`);
 
         if (!response.data.ok) {
             Logger.error(`failed to fetch user with userId: ${userId}, error: ${response.data.error}`);
             throw new Error(`failed to fetch user with userId: ${userId}, error: ${response.data.error}`);
         }
 
-        Logger.debug(`response from slack API: ${JSON.stringify(response.data)}`);
         return response.data.user;
     }
 
@@ -65,10 +65,10 @@ export class SlackService {
         };
 
         const response = await axios.request<GenericSlackResponse>(requestOptions);
+        Logger.verbose(`response from slack API: ${JSON.stringify(response.data)}`);
 
         if (!response.data.ok) {
             Logger.error(`failed to delete message in channel: ${channel}, error: ${response.data.error}`);
-            Logger.debug(JSON.stringify(requestOptions, null, 4));
             throw new Error(`failed to delete message in channel: ${channel}, error: ${response.data.error}`);
         }
     }
@@ -78,13 +78,13 @@ export class SlackService {
 
         const queryString = `token=${config.slack.botUserToken}&channel=${channel}&timestamp=${timestamp}`;
         const response = await axios.get<GenericSlackResponse>(`https://slack.com/api/reactions.get?${queryString}`);
+        Logger.verbose(`response from slack API: ${JSON.stringify(response.data)}`);
 
         if (!response.data.ok) {
             Logger.error(`failed to fetch reactions for message in channel: ${channel}, error: ${response.data.error}`);
             throw new Error(`failed to fetch reactions for message in channel: ${channel}, error: ${response.data.error}`);
         }
 
-        Logger.debug(`response from slack API: ${JSON.stringify(response.data)}`);
         return response.data.message.reactions;
     }
 
@@ -106,11 +106,26 @@ export class SlackService {
         };
 
         const response = await axios.request<GenericSlackResponse>(requestOptions);
+        Logger.verbose(`response from slack API: ${JSON.stringify(response.data)}`);
 
         if (!response.data.ok && response.data.error !== 'already_reacted') {
             Logger.error(`failed to add reaction to message in channel: ${channel}, error: ${response.data.error}`);
-            Logger.debug(JSON.stringify(requestOptions, null, 4));
             throw new Error(`failed to add reaction to message in channel: ${channel}, error: ${response.data.error}`);
         }
+    }
+
+    async getMessageDetails(channel: string, timestamp: string): Promise<SlackMessageModel> {
+        Logger.debug(`fetching message in channel '${channel}' with timestamp '${timestamp}'`);
+
+        const queryString = `token=${config.slack.botUserToken}&channel=${channel}&timestamp=${timestamp}&limit=1&inclusive=true`;
+        const response = await axios.get<GenericSlackResponse>(`https://slack.com/api/conversations.history?${queryString}`);
+        Logger.verbose(`response from slack API: ${JSON.stringify(response.data)}`);
+
+        if (!response.data.ok && response.data.error !== 'already_reacted') {
+            Logger.error(`failed to fetch message in channel: ${channel}, error: ${response.data.error}`);
+            throw new Error(`failed to fetch message in channel: ${channel}, error: ${response.data.error}`);
+        }
+
+        return response.data.messages[0];
     }
 }

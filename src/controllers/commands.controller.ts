@@ -15,7 +15,7 @@ export class SlashCommandsController {
 
     @Post('mock')
     async postMockingTextAsUser(@Body() body: SlackCommandPostBody) {
-        Logger.log(`<@${body.user_id}|${body.user_name}> /mock ${body.text}`);
+        Logger.log(`<@${body.user_id}|${body.user_name}> /mock "${body.text}"`);
 
         if (body.text.trim() === '') {
             Logger.warn('no text passed to /mock command');
@@ -44,7 +44,7 @@ export class SlashCommandsController {
 
     @Post('sayas')
     async impersonateUser(@Body() body: SlackCommandPostBody) {
-        Logger.log(`<@${body.user_id}|${body.user_name}> /sayas ${body.text}`);
+        Logger.log(`<@${body.user_id}|${body.user_name}> /sayas "${body.text}"`);
 
         if (body.text.trim() === '') {
             Logger.warn('no text passed to /sayas command');
@@ -91,7 +91,7 @@ export class SlashCommandsController {
 
     @Post('scrabble')
     async postScrabbleTilesAsUser(@Body() body: SlackCommandPostBody) {
-        Logger.log(`<@${body.user_id}|${body.user_name}> /scrabble ${body.text}`);
+        Logger.log(`<@${body.user_id}|${body.user_name}> /scrabble "${body.text}"`);
 
         if (body.text.trim() === '') {
             Logger.warn('no text passed to /scrabble command');

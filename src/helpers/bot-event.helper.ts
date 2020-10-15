@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ReactionAddedEvent, SlackEventPayload } from '../models/slack-event';
 import { SlackService } from 'src/services/slack.service';
-import { config } from '../config';
 
 @Injectable()
 export class BotEventHelper {
@@ -17,20 +16,23 @@ export class BotEventHelper {
         switch (eventType) {
             case 'reaction_added':
                 Logger.log('processing "reaction_added" event');
-                Logger.debug(JSON.stringify(event, null, 4));
                 await this.processReactionAddedEvent(event.event as ReactionAddedEvent);
                 break;
             default:
                 Logger.warn(`unknown event type: ${eventType}`);
-                Logger.debug(JSON.stringify(event, null, 4));
+                Logger.verbose(JSON.stringify(event, null, 4));
                 return;
         }
     }
 
     async processReactionAddedEvent(event: ReactionAddedEvent): Promise<void> {
         if (event.reaction === 'x') {
-            // TODO: verify message was created by shtbot
-            await this.slackService.deleteMessage(event.item.channel, event.item.ts);
+            const message = await this.slackService.getMessageDetails(event.item.channel, event.item.ts);
+
+            // verify message was created by a bot
+            if (message.type === 'message' && message.subtype === 'bot_message') {
+                await this.slackService.deleteMessage(event.item.channel, event.item.ts);
+            }
         } else if (event.reaction === 'badalec') {
             // use random number to decide if shtbot should also react
             const rand = Math.floor((Math.random() * 10) + 1);
@@ -40,7 +42,7 @@ export class BotEventHelper {
                 return x.name === 'badalec';
             }).count;
 
-            Logger.debug(`determining whether or not to add "badalec" reaction to message: ${rand} < ${badalecReactionCount}`);
+            Logger.verbose(`determining whether or not to add "badalec" reaction to message: ${rand} <= ${badalecReactionCount}`);
             if (rand <= badalecReactionCount) {
                 await this.slackService.addReactionToMessage(event.item.channel, event.item.ts, 'badalec');
             }

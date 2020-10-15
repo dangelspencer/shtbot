@@ -14,6 +14,6 @@ export class EventsController {
             return body.challenge;
         }
 
-        await this.eventHelper.processEvent(body);
+        this.eventHelper.processEvent(body);
     }
 }

@@ -1,11 +1,10 @@
-import { SlackMessagePostBody } from "./slack-message";
-
 export class GenericSlackResponse {
     ok: boolean;
     error?: string;
 
     user?: SlackUserModel;
     message?: SlackMessageModel;
+    messages?: [SlackMessageModel];
 }
 
 export class SlackUserModel {
@@ -55,7 +54,8 @@ export class SlackReactionModel {
 
 export class SlackMessageModel {
     type: string;
-    user: string;
+    subtype: string;
+    user?: string;
     text: string;
     ts: string;
     reactions: [SlackReactionModel];
