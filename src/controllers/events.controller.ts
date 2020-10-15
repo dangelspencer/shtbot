@@ -4,13 +4,15 @@ import { SlackEventPayload } from 'src/models/slack-event';
 
 @Controller('api/events')
 export class EventsController {
+    private readonly logger = new Logger(EventsController.name);
+
     constructor(private readonly eventHelper: BotEventHelper) {}
 
     @Post()
     async postMockingTextAsUser(@Body() body: SlackEventPayload<any>) {
         // respond to auth challenges (when url is changed)
         if (body.challenge != null) {
-            Logger.log('responding to auth challenge');
+            this.logger.log('responding to auth challenge');
             return body.challenge;
         }
 

@@ -1,5 +1,5 @@
 # shtbot
-SHT shitposting slackbot
+SHT slackbot
 
 ## Slash Commands
 * /mock - convert text to Mocking SpongeBob format
@@ -8,3 +8,7 @@ SHT shitposting slackbot
 
 ## Other Features
 * delete bot messages by reacting with the 'x' emoji
+* randomly jumps on the :badalec: reaction train
+
+## TODO
+* fix logger.error() output

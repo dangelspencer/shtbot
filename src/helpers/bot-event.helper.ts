@@ -4,6 +4,8 @@ import { SlackService } from 'src/services/slack.service';
 
 @Injectable()
 export class BotEventHelper {
+    private readonly logger = new Logger(BotEventHelper.name);
+
     constructor (private readonly slackService: SlackService) {}
 
     async getEventType(event: SlackEventPayload<any>): Promise<string> {
@@ -15,12 +17,12 @@ export class BotEventHelper {
 
         switch (eventType) {
             case 'reaction_added':
-                Logger.log('processing "reaction_added" event');
+                this.logger.log('processing "reaction_added" event');
                 await this.processReactionAddedEvent(event.event as ReactionAddedEvent);
                 break;
             default:
-                Logger.warn(`unknown event type: ${eventType}`);
-                Logger.verbose(JSON.stringify(event, null, 4));
+                this.logger.verbose(`unhandled event type "${eventType}"`);
+                this.logger.debug(JSON.stringify(event));
                 return;
         }
     }
@@ -42,7 +44,7 @@ export class BotEventHelper {
                 return x.name === 'badalec';
             }).count;
 
-            Logger.verbose(`determining whether or not to add "badalec" reaction to message: ${rand} <= ${badalecReactionCount}`);
+            this.logger.verbose(`determining whether or not to add "badalec" reaction to message: ${rand} <= ${badalecReactionCount}`);
             if (rand <= badalecReactionCount) {
                 await this.slackService.addReactionToMessage(event.item.channel, event.item.ts, 'badalec');
             }
