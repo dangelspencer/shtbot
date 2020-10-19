@@ -87,7 +87,7 @@ export class SlashCommandsController {
             icon_url: user.profile.image_original
         };
 
-        this.logger.verbose(`posting message to channel as user <@${body.user_id}|${body.user_name}>`);
+        this.logger.verbose(`posting message to channel as user <@${mentions[0].id}|${mentions[0].username}>`);
         await this.slackService.postMessage(message);
     }
 
