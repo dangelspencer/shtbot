@@ -9,7 +9,8 @@ const config = {
         port: process.env.SERVER_PORT != null ? parseInt(process.env.SERVER_PORT) : 3000
     },
     slack: {
-        botUserToken: process.env.BOT_USER_TOKEN
+        botUserToken: process.env.BOT_USER_TOKEN,
+        slackSigningSecret: process.env.SLACK_SIGNING_SECRET
     }
 };
 
