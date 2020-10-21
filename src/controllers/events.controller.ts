@@ -9,7 +9,7 @@ export class EventsController {
     constructor(private readonly eventHelper: BotEventHelper) {}
 
     @Post()
-    async postMockingTextAsUser(@Body() body: SlackEventPayload<any>) {
+    async processSlackEvent(@Body() body: SlackEventPayload<any>) {
         // respond to auth challenges (when url is changed)
         if (body.challenge != null) {
             this.logger.log('responding to auth challenge');
