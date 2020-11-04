@@ -34,7 +34,7 @@ export class SlackService {
     }
 
     async getUserById(userId: string): Promise<SlackUserModel> {
-        this.logger.verbose(`deleting fetching user with id '${userId}'`);
+        this.logger.verbose(`fetching user with id '${userId}'`);
 
         if (userId == null) {
             this.logger.warn('empty userId passed to SlackService.getUserById()');
