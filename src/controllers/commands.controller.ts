@@ -4,16 +4,63 @@ import { SlackMessagePostBody } from '../models/slack-message';
 import { SlackService } from '../services/slack.service';
 import { TextHelper } from '../helpers/text.helper';
 import { MessageHelper } from '../helpers/message.helper';
+import { GiphyService } from 'src/services/giphy.service';
 
 @Controller('api/slash-commands')
 export class SlashCommandsController {
     private readonly logger = new Logger(SlashCommandsController.name);
 
     constructor(
+        private readonly giphyService: GiphyService,
         private readonly messageHelper: MessageHelper,
         private readonly slackService: SlackService,
         private readonly textHelper: TextHelper
     ) {}
+
+    @Post('fire')
+    async fireUser(@Body() body: SlackCommandPostBody) {
+        this.logger.log(`<@${body.user_id}|${body.user_name}> /fire "${body.text}"`);
+
+        if (body.text.trim() === '') {
+            this.logger.warn('no text passed to /fire command');
+            return {
+                response_type: 'ephemeral',
+                text: 'Invalid command format - usage: /fire <@user>'
+            };
+        }
+
+        this.logger.verbose('parsing tagged user from command text');
+        const mentions = this.messageHelper.parseMentions(body.text);
+        if (mentions.length === 0) {
+            this.logger.warn('no user tags passed to /fire command');
+            return {
+                response_type: 'ephemeral',
+                text: 'Invalid command format - usage: /fire <@user>'
+            };
+        }
+
+        this.logger.verbose('verifying first word of text is a tagged user');
+        const messageText = body.text.split(' ');
+        const indexOfFirstMention = messageText[0].indexOf(mentions[0].id);
+        if (indexOfFirstMention === -1 || mentions[0].type !== '@') {
+            this.logger.warn('tagged user is not first word in text passed to /fire command');
+            return {
+                response_type: 'ephemeral',
+                text: 'Invalid command format - usage: /fire <@user>'
+            };
+        }
+
+        const gif = await this.giphyService.getGifForSearchText('gtfo');
+
+        const messageBlocks = [];
+        messageBlocks.push(this.messageHelper.buildMarkdownBlock(`<@${mentions[0].id}>, you're fired`));
+        messageBlocks.push(this.messageHelper.buildImageBlock('gtfo', gif.images.downsized.url, gif.slug));
+
+        await this.slackService.postMessage({
+            blocks: messageBlocks,
+            channel: body.channel_id
+        });
+    }
 
     @Post('mock')
     async postMockingTextAsUser(@Body() body: SlackCommandPostBody) {

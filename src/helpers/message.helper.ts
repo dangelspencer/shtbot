@@ -23,4 +23,38 @@ export class MessageHelper {
 
         return [];
     }
+
+    buildImageBlock(title, url, altText = title) {
+        return {
+			type: 'image',
+			title: {
+				type: 'plain_text',
+				text: title,
+				emoji: true
+			},
+			image_url: url,
+			alt_text: altText
+		}
+    }
+
+    buildMarkdownBlock(text) {
+        return {
+			type: 'section',
+			text: {
+				type: "mrkdwn",
+				text: text
+			}
+		}
+    }
+
+    buildTextBlock(text) {
+        return {
+			type: 'section',
+			text: {
+				type: "plain_text",
+				text: text,
+				emoji: true
+			}
+		}
+    }
 }
