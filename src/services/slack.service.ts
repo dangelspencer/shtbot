@@ -73,8 +73,7 @@ export class SlackService {
         this.logger.debug(`response from slack API: ${JSON.stringify(response.data)}`);
 
         if (!response.data.ok) {
-            this.logger.error(`failed to delete message in channel: ${channel}, error: ${response.data.error}`);
-            throw new Error(`failed to delete message in channel: ${channel}, error: ${response.data.error}`);
+            this.logger.warn(`failed to delete message in channel: ${channel}, error: ${response.data.error}`);
         }
     }
 

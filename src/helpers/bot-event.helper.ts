@@ -30,12 +30,7 @@ export class BotEventHelper {
         this.logger.log(`processing event: reaction_added:${event.reaction}`);
         
         if (event.reaction === 'x') {
-            const message = await this.slackService.getMessageDetails(event.item.channel, event.item.ts);
-
-            // verify message was created by a bot
-            if (message.type === 'message' && message.subtype === 'bot_message') {
-                await this.slackService.deleteMessage(event.item.channel, event.item.ts);
-            }
+            await this.slackService.deleteMessage(event.item.channel, event.item.ts);
         } else {
             // determine if shtbot should react to a message
             const randomizationFactor = await this.getReactionRandomizationFactor(event.reaction);
