@@ -36,32 +36,42 @@ export class BotEventHelper {
             if (message.type === 'message' && message.subtype === 'bot_message') {
                 await this.slackService.deleteMessage(event.item.channel, event.item.ts);
             }
-        } else if (event.reaction === 'badalec') {
-            // use random number to decide if shtbot should also react
-            const rand = Math.floor((Math.random() * 6) + 1);
+        } else {
+            // determine if shtbot should react to a message
+            const randomizationFactor = await this.getReactionRandomizationFactor(event.reaction);
+            if (randomizationFactor == null) {
+                return;
+            }
+
+            // use random number to decide if shtbot will react to the message
+            const rand = Math.floor((Math.random() * randomizationFactor) + 1);
             const currentReactions = await this.slackService.getReactionsOnMessage(event.item.channel, event.item.ts);
 
-            const badalecReactionCount = currentReactions.find(x => {
-                return x.name === 'badalec';
+            const reactionCount = currentReactions.find(x => {
+                return x.name === event.reaction;
             }).count;
 
-            this.logger.verbose(`determining whether or not to add "badalec" reaction to message: ${rand} <= ${badalecReactionCount}`);
-            if (rand <= badalecReactionCount) {
-                await this.slackService.addReactionToMessage(event.item.channel, event.item.ts, 'badalec');
+            this.logger.verbose(`determining whether or not to add "${event.reaction}" reaction to message: ${rand} <= ${reactionCount}`);
+            if (rand <= reactionCount) {
+                await this.slackService.addReactionToMessage(event.item.channel, event.item.ts, event.reaction);
             }
-        } else if (event.reaction === 'shankduck') {
-            // use random number to decide if shtbot should also react
-            const rand = Math.floor((Math.random() * 4) + 1);
-            const currentReactions = await this.slackService.getReactionsOnMessage(event.item.channel, event.item.ts);
+        }
+    }
 
-            const badalecReactionCount = currentReactions.find(x => {
-                return x.name === 'shankduck';
-            }).count;
-
-            this.logger.verbose(`determining whether or not to add "shankduck" reaction to message: ${rand} <= ${badalecReactionCount}`);
-            if (rand <= badalecReactionCount) {
-                await this.slackService.addReactionToMessage(event.item.channel, event.item.ts, 'shankduck');
-            }
+    async getReactionRandomizationFactor(reaction: string): Promise<number> {
+        switch (reaction) {
+            case 'shankduck':
+            case 'badalec':
+                return 6;
+            case '100-oof':
+            case 'f':
+            case 'eyes':
+            case 'joy':
+            case '100':
+            case 'fire':
+                return 30;
+            default:
+                return null;
         }
     }
 }
