@@ -57,14 +57,14 @@ export class BotEventHelper {
         switch (reaction) {
             case 'shankduck':
             case 'badalec':
-                return 6;
+                return 10;
             case '100-oof':
             case 'f':
             case 'eyes':
             case 'joy':
             case '100':
             case 'fire':
-                return 30;
+                return 100;
             default:
                 return null;
         }
