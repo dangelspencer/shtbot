@@ -2,6 +2,7 @@
 SHT slackbot
 
 ## Slash Commands
+* /fire - tells a user to "GTFO" with a gif from Giphy (Giphy Beta API key is limited to 42 requests an hour and 1000 requests a day)
 * /mock - convert text to Mocking SpongeBob format
 * /sayas - impersonates another workspace user
 * /scrabble - converts and displays text as scrabble emojis (requires scrabble emojis to be present in slack workspace)
@@ -36,3 +37,4 @@ How to setup a local development environment
 | SERVER_PORT | number | 3000 | controls what port the server listens on |
 | BOT_USER_TOKEN | string | | authentication token for slack API |
 | SLACK_SIGNING_SECRET | string | | secret used to validate slack webhook requests | 
+| GIPHY_API_KEY | string | | api key for Giphy |
