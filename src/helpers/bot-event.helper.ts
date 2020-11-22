@@ -56,6 +56,7 @@ export class BotEventHelper {
     async getReactionRandomizationFactor(reaction: string): Promise<number> {
         switch (reaction) {
             case 'shankduck':
+                return 5;
             case 'badalec':
                 return 10;
             case '100-oof':
@@ -64,9 +65,13 @@ export class BotEventHelper {
             case 'joy':
             case '100':
             case 'fire':
+            case '+1':
+            case 'illuminati':
+            case 'brian-wow':
+            case 'edgarfeelsbad':
                 return 100;
             default:
-                return null;
+                return 500;
         }
     }
 }
