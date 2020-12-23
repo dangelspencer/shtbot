@@ -130,7 +130,7 @@ export class SlashCommandsController {
         const message: SlackMessagePostBody = {
             text: body.text.substr(body.text.indexOf(' ')).trim(),
             channel: body.channel_id,
-            username: user.profile.display_name,
+            username: user.profile.display_name == null || user.profile.display_name == '' ? user.profile.real_name_normalized : user.profile.display_name,
             icon_url: user.profile.image_original
         };
 
