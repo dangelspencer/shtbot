@@ -83,7 +83,7 @@ export class SlashCommandsController {
         const message: SlackMessagePostBody = {
             text: convertedText,
             channel: body.channel_id,
-            username: user.profile.display_name,
+            username: user.profile.display_name == null || user.profile.display_name == '' ? user.profile.real_name_normalized : user.profile.display_name,
             icon_url: user.profile.image_original
         };
 
@@ -138,15 +138,15 @@ export class SlashCommandsController {
         await this.slackService.postMessage(message);
     }
 
-    @Post('scrabble')
+    @Post('tile')
     async postScrabbleTilesAsUser(@Body() body: SlackCommandPostBody) {
-        this.logger.log(`<@${body.user_id}|${body.user_name}> /scrabble "${body.text}"`);
+        this.logger.log(`<@${body.user_id}|${body.user_name}> /tile "${body.text}"`);
 
         if (body.text.trim() === '') {
-            this.logger.warn('no text passed to /scrabble command');
+            this.logger.warn('no text passed to /tile command');
             return {
                 response_type: 'ephemeral',
-                text: 'Invalid command format - usage: /scrabble <text>'
+                text: 'Invalid command format - usage: /tile <text>'
             };
         }
 
@@ -159,7 +159,7 @@ export class SlashCommandsController {
         const message: SlackMessagePostBody = {
             text: convertedText,
             channel: body.channel_id,
-            username: user.profile.display_name,
+            username: user.profile.display_name == null || user.profile.display_name == '' ? user.profile.real_name_normalized : user.profile.display_name,
             icon_url: user.profile.image_original
         };
 
