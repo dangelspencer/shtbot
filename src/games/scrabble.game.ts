@@ -328,7 +328,7 @@ export class ScrabbleGame {
     private findIndexOfPlayerWithId(userId): number {
         this.logger.verbose(`determining playerIndex for user: ${userId}`);
         let playerIndex = this.gameState.currentPlayer;
-        while (this.gameState.players[playerIndex.toString()].userId !== userId) {
+        while (this.gameState.players[playerIndex.toString()] == null || this.gameState.players[playerIndex.toString()].userId !== userId) {
             if (playerIndex === 4) {
                 playerIndex = 1;
             } else {
@@ -958,38 +958,27 @@ export class ScrabbleGame {
         // show remaining tile count
         text += `\nRemaining Tiles: ${this.gameState.tilePouch.length}`;
 
-        if (this.gameState.statusMessageTS == null) {
-            // create new message
-            const messageData: SlackMessagePostBody = {
-                channel: this.gameState.channel,
-                text
-            };
+        // create new message
+        const messageData: SlackMessagePostBody = {
+            channel: this.gameState.channel,
+            text
+        };
 
-            this.slackService.postMessage(messageData).then((response) => {
-                // save message timestamp so we can update it
-                this.gameState.statusMessageTS = response.message.ts;
-                this.saveGame();
+        // send message
+        this.slackService.postMessage(messageData).then((response) => {
+            // delete old status message
+            if (this.gameState.statusMessageTS != null) {
+                this.slackService.deleteMessage(this.gameState.channel, this.gameState.statusMessageTS);
+            }
 
+            // save message timestamp
+            this.gameState.statusMessageTS = response.message.ts;
+            this.saveGame();
+
+            if (showCurrentPlayerTileRack) {
                 this.displayTileRackForPlayer(this.gameState.currentPlayer);
-            });
-        } else {
-            // update original message
-            const messageData: SlackUpdateMessagePostBody = {
-                channel: this.gameState.channel,
-                text,
-                ts: this.gameState.statusMessageTS
-            };
-
-            this.slackService.updateMessage(messageData).then(() => {
-                if (showCurrentPlayerTileRack) {
-                    this.displayTileRackForPlayer(this.gameState.currentPlayer);
-                }
-            }).catch(() => {
-                // if we fail to update the message (it no longer exists) then we need to create a new one
-                this.gameState.statusMessageTS = null;
-                this.updateStatus(message);
-            });
-        }
+            }
+        });
     }
 
     private sendErrorMessage(userId: string, message: string, channel = null) {
@@ -1027,7 +1016,7 @@ export class ScrabbleGame {
             }
 
             // words must be at least two characters
-            if (word.length > 1) {
+            if (word.split('_').join('').length > 1) {
                 return word;
             }
         } else {
@@ -1054,7 +1043,7 @@ export class ScrabbleGame {
             }
 
             // words must be at least two characters
-            if (word.length > 1) {
+            if (word.split('_').join('').length > 1) {
                 return word;
             }
         }
@@ -1076,11 +1065,11 @@ export class ScrabbleGame {
         }
 
         // verify user was the last player
-        const lastTurn = this.gameState.turns[this.gameState.turns.length - 1];
-        if (playerIndex !== lastTurn.player) {
-            this.sendErrorMessage(userId, 'You can only undo your turns');
-            return;
-        }
+        // const lastTurn = this.gameState.turns[this.gameState.turns.length - 1];
+        // if (playerIndex !== lastTurn.player) {
+        //     this.sendErrorMessage(userId, 'You can only undo your turns');
+        //     return;
+        // }
 
         this.undoLastTurn();
         this.saveGame();
@@ -1150,7 +1139,7 @@ export class ScrabbleGame {
                 this.undoLastTurn();
                 this.incrementTurn();
                 
-                const statusMessage = `<@${userId}> successfully challenged <@${this.gameState.players[lastTurn.player.toString()].userId}>'s move. ${this.textHelper.textToScrabbleTiles(word)} is not in the scrabble dictionary. <@${this.gameState.players[lastTurn.player.toString()].userId}> (${lastTurn.player}) has lost their turn.`;
+                const statusMessage = `<@${userId}> successfully challenged <@${this.gameState.players[lastTurn.player.toString()].userId}>'s move. ${this.textHelper.textToScrabbleTiles(word)} is not in the scrabble dictionary. <@${this.gameState.players[lastTurn.player.toString()].userId}> has lost their turn.`;
 
                 // save challenge as a turn 
                 const turn: ScrabbleChallengeTurn = {
@@ -1177,7 +1166,7 @@ export class ScrabbleGame {
             this.gameState.players[playerIndex.toString()].losesNextTurn = true;
         }
 
-        const statusMessage = `<@${userId}> failed to challenge <@${this.gameState.players[lastTurn.player.toString()].userId}>'s move. All word(s) are in the scrabble dictionary. <@${userId}> (${playerIndex}) has lost their next turn.`;
+        const statusMessage = `<@${userId}> failed to challenge <@${this.gameState.players[lastTurn.player.toString()].userId}>'s move. All word(s) are in the scrabble dictionary. <@${userId}> has lost their next turn.`;
 
         const turn: ScrabbleChallengeTurn = {
             type: ScrabbleTurnType.Challenge,
@@ -1199,3 +1188,4 @@ export class ScrabbleGame {
 // TODO: status message (for all users?)?
 // TODO: randomize next turn, game over, new game messages?
 // TODO: create command documentation
+// TODO: ephemeral response with command to avoid having to type the whole thing out again?
