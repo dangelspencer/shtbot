@@ -83,4 +83,21 @@ export class TextHelper {
 
         return convertedWords.join(' ');
     }
+
+    scrabbleTilesToText(text: string): string {
+        const parts = text.split(':').filter(x => x !== '');
+
+        let result = '';
+        for (const part of parts) {
+            if (['aa', 'bb', 'mm', 'oo', 'vv', 'xx'].includes(part)) {
+                result += part.substr(0,1);
+            } else if (['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'].includes(part)) {
+                result += ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'].indexOf(part);
+            } else {
+                result += part;
+            }
+        }
+
+        return result;
+    }
 }

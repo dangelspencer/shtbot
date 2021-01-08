@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosRequestConfig } from 'axios';
-import { SlackMessagePostBody } from 'src/models/slack-message';
+import { SlackMessagePostBody, SlackEphemeralMessagePostBody, SlackUpdateMessagePostBody } from 'src/models/slack-message';
 import { GenericSlackResponse, SlackMessageModel, SlackReactionModel, SlackUserModel } from 'src/models/slack-responses';
 import { config } from '../config';
 
@@ -31,6 +31,57 @@ export class SlackService {
         }
 
         this.logger.verbose(`message successfully posted to channel: ${messageData.channel}`);
+        return response.data;
+    }
+
+    async postEphemeralMessage(messageData: SlackEphemeralMessagePostBody) {
+        this.logger.verbose(`posting ephemeral message to channel '${messageData.channel}'`);
+
+        const requestOptions: AxiosRequestConfig = {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${config.slack.botUserToken}`,
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            data: messageData,
+            url: 'https://slack.com/api/chat.postEphemeral'
+        };
+
+        const response = await axios.request<GenericSlackResponse>(requestOptions);
+        this.logger.debug(`response from slack API: ${JSON.stringify(response.data)}`);
+
+        if (!response.data.ok) {
+            this.logger.error(`failed to post ephemeral message to channel: ${messageData.channel}, error: ${response.data.error}`);
+            throw new Error(`failed to post ephemeral message to channel: ${messageData.channel}, error: ${response.data.error}`);
+        }
+
+        this.logger.verbose(`ephemeral message successfully posted to channel: ${messageData.channel}`);
+        return response.data;
+    }
+
+    async updateMessage(messageData: SlackUpdateMessagePostBody) {
+        this.logger.verbose(`updating message '${messageData.ts}' in channel '${messageData.channel}'`);
+
+        const requestOptions: AxiosRequestConfig = {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${config.slack.botUserToken}`,
+                'Content-Type': 'application/json; charset=utf-8'
+            },
+            data: messageData,
+            url: 'https://slack.com/api/chat.update'
+        };
+
+        const response = await axios.request<GenericSlackResponse>(requestOptions);
+        this.logger.debug(`response from slack API: ${JSON.stringify(response.data)}`);
+
+        if (!response.data.ok) {
+            this.logger.error(`failed to update message in channel: ${messageData.channel}, error: ${response.data.error}`);
+            throw new Error(`failed to update message in channel: ${messageData.channel}, error: ${response.data.error}`);
+        }
+
+        this.logger.verbose(`ephemeral message successfully posted to channel: ${messageData.channel}`);
+        return response.data;
     }
 
     async getUserById(userId: string): Promise<SlackUserModel> {

@@ -32,3 +32,6 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# scrabble game files
+data/**/scrabble-*.json
