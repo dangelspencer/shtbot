@@ -3,7 +3,7 @@ import { GameState, ScrabblePlayer, BoardSpace, WordDirection, Tile, BoardTile, 
 import { SlackService } from 'src/services/slack.service';
 import { config } from '../config';
 import * as fs from 'fs';
-import { SlackMessagePostBody, SlackEphemeralMessagePostBody, SlackUpdateMessagePostBody } from 'src/models/slack-message';
+import { SlackMessagePostBody, SlackEphemeralMessagePostBody } from 'src/models/slack-message';
 import { TextHelper } from 'src/helpers/text.helper';
 
 @Injectable()
@@ -18,6 +18,7 @@ export class ScrabbleGame {
 
     private loadGame(channel: string): boolean {
         this.logger.verbose('loading game state');
+
         const gameDataFolder = config.games.dataDirectory;
         if (!fs.existsSync(gameDataFolder)) {
             fs.mkdirSync(gameDataFolder, { recursive: true });
@@ -35,6 +36,7 @@ export class ScrabbleGame {
 
     private saveGame() {
         this.logger.verbose('saving game state');
+
         const gameDataFolder = config.games.dataDirectory;
         if (!fs.existsSync(gameDataFolder)) {
             fs.mkdirSync(gameDataFolder, { recursive: true });
@@ -43,6 +45,19 @@ export class ScrabbleGame {
         const fileName = `${gameDataFolder}/scrabble-${this.gameState.channel}.json`;
         const data = JSON.stringify(this.gameState, null, 4);
         fs.writeFileSync(fileName, data);
+    }
+
+    private deleteGameData() {
+        this.logger.verbose('deleting game data');
+
+        const gameDataFolder = config.games.dataDirectory;
+        if (!fs.existsSync(gameDataFolder)) {
+            fs.mkdirSync(gameDataFolder, { recursive: true });
+        }
+
+        const oldFileName = `${gameDataFolder}/scrabble-${this.gameState.channel}.json`;
+        const newFileName = `${gameDataFolder}/scrabble-${this.gameState.channel}-${new Date().getTime()}.json`;
+        fs.renameSync(oldFileName, newFileName);
     }
 
     private initalizeGameState(channel: string) {
@@ -70,7 +85,8 @@ export class ScrabbleGame {
             points: 0,
             userId,
             tileRack: [],
-            losesNextTurn: false
+            losesNextTurn: false,
+            passedLastTurn: false
         };
 
         this.gameState.players[playerIndex.toString()] = player;
@@ -471,6 +487,29 @@ export class ScrabbleGame {
             return;
         }
 
+        // ensure there are enough tiles in the pouch
+        if (formattedOrder.length > this.gameState.tilePouch.length) {
+            this.sendErrorMessage(userId, `Unable to exchange tiles, cannot exchange ${formattedOrder.length} tiles when there are only ${this.gameState.tilePouch.length} in the tile pouch`);
+            return;
+        }
+
+        if (formattedOrder.length === 0 && this.gameState.tilePouch.length === 0) {
+            this.gameState.players[playerIndex.toString()].passedLastTurn = true;
+
+            // check if all other players have passed
+            let allPlayersHavePassed = true;
+            for (let i = 1; i <= 4; i++) {
+                if (this.gameState.players[i.toString()] != null && !this.gameState.players[i.toString()].passedLastTurn) {
+                    allPlayersHavePassed = false;
+                }
+            }
+
+            if (allPlayersHavePassed) {
+                this.gameOver('All players have passed, there are no moves left!');
+                return;
+            }
+        }
+
         // validate tiles being exchanged are in the users tile rack
         const exchangedTiles = [];
         for (let i = 0; i < formattedOrder.length; i++) {
@@ -803,12 +842,50 @@ export class ScrabbleGame {
             statusMessage
         };
         this.gameState.turns.push(turnData);
+        this.gameState.players[this.gameState.currentPlayer.toString()].passedLastTurn = false;
 
         this.incrementTurn();
         this.saveGame();
 
-        // update status
-        this.updateStatus(statusMessage);
+        // check if game is over
+        if (this.gameState.players[playerIndex].tileRack.length === 0 && this.gameState.tilePouch.length === 0) {
+            this.gameOver();
+        } else {
+            // update status    
+            this.updateStatus(statusMessage);
+        }
+    }
+
+    private gameOver(message: string = null) {
+        // find player with the most points
+        const playersByScore = this.getPlayersByScore();
+        const winningPlayer = playersByScore[0];
+
+        // create game over message
+        let gameOverMessage = message;
+        if (message == null) {
+            gameOverMessage = `${this.textHelper.textToScrabbleTiles('game over')}`;
+        }
+
+        gameOverMessage += `\n<@${winningPlayer.userId}> wins with ${winningPlayer.points} points!`;
+
+        // get status message from last turn
+        const lastStatusMessage = this.gameState.turns[this.gameState.turns.length -1].statusMessage;
+        this.updateStatus(`${lastStatusMessage}\n\n\n${gameOverMessage}`);
+
+        // delete game data
+        this.deleteGameData();
+    }
+
+    private getPlayersByScore(): ScrabblePlayer[] {
+        const players = [];
+        for (let i = 1; i <= 4; i++) {
+            if (this.gameState.players[i.toString()] != null) {
+                players.push(this.gameState.players[i.toString()]);
+            }
+        }
+
+        return players.sort((a, b) => b.points - a.points);
     }
 
     private undoPlayWordTurn() {
@@ -1184,8 +1261,8 @@ export class ScrabbleGame {
 }
 
 // TODO: handle creating new games in channels that already have a game
-// TODO: game over scenario
 // TODO: status message (for all users?)?
 // TODO: randomize next turn, game over, new game messages?
 // TODO: create command documentation
 // TODO: ephemeral response with command to avoid having to type the whole thing out again?
+// TODO: endgame statistics - highest scoring move, longest word

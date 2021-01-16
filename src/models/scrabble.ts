@@ -18,20 +18,8 @@ export interface ScrabblePlayer {
     tileRack: string[];
     points: number;
     losesNextTurn: boolean;
+    passedLastTurn: boolean;
 }
-
-// export interface TurnData {
-//     type: TurnType;
-//     userId: string;
-//     player: number;
-//     words?: string[]; // word
-//     points?: number; // word
-//     drawnTiles?: string[]; // word, exchange
-//     playedTiles?: Tile[]; // word
-//     exchangedTiles?: string[]; // exchange
-//     challengedTurn?: TurnData; // challenge
-//     challengeAttempted?: boolean; // challenge
-// }
 
 export enum BoardSpace {
     Center,

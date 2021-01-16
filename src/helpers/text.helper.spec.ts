@@ -1,4 +1,3 @@
-import { text } from 'express';
 import { TextHelper } from './text.helper';
 
 describe('TextHelper', () => {
