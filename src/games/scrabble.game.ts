@@ -505,6 +505,8 @@ export class ScrabbleGame {
             }
 
             if (allPlayersHavePassed) {
+                this.incrementTurn();
+                this.saveGame();
                 this.gameOver('All players have passed, there are no moves left!');
                 return;
             }
@@ -527,7 +529,7 @@ export class ScrabbleGame {
 
         const drawnTiles = this.drawTilesForPlayer(playerIndex);
 
-        const statusMessage = `<@${userId}> exchanged some tiles`;
+        const statusMessage = `<@${userId}> exchanged ${exchangedTiles.length} tiles`;
 
         const turn: ScrabbleExchangeTurn = {
             type: ScrabbleTurnType.Exchange,
@@ -872,6 +874,10 @@ export class ScrabbleGame {
         // get status message from last turn
         const lastStatusMessage = this.gameState.turns[this.gameState.turns.length -1].statusMessage;
         this.updateStatus(`${lastStatusMessage}\n\n\n${gameOverMessage}`);
+
+        // generate game stats
+        this.generateStats();
+        this.saveGame();
 
         // delete game data
         this.deleteGameData();
@@ -1257,6 +1263,57 @@ export class ScrabbleGame {
 
         this.saveGame();
         this.updateStatus(statusMessage, playerIndex !== this.gameState.currentPlayer);
+    }
+
+    pass(channelId: string, userId: string) {
+        this.logger.verbose(`exchanging tiles for user: ${userId}`);
+        if (!this.loadGame(channelId)) {
+            this.sendErrorMessage(userId, 'There is no active game in this channel', channelId);
+            return;
+        }
+
+        // find index of player with userId
+        const playerIndex = this.findIndexOfPlayerWithId(userId);
+        if (playerIndex == null) {
+            this.sendErrorMessage(userId, 'You are not part of this game');
+            return;
+        }
+
+        // verify it's the player's turn
+        if (playerIndex !== this.gameState.currentPlayer) {
+            this.logger.warn(`user ${userId} is not the current player`);
+            this.sendErrorMessage(userId, 'wait for your turn');
+            return;
+        }
+
+        this.gameState.players[playerIndex.toString()].passedLastTurn = true;
+        this.incrementTurn();
+        this.saveGame();
+
+        // check if all other players have passed
+        let allPlayersHavePassed = true;
+        for (let i = 1; i <= 4; i++) {
+            if (this.gameState.players[i.toString()] != null && !this.gameState.players[i.toString()].passedLastTurn) {
+                allPlayersHavePassed = false;
+            }
+        }
+
+        if (allPlayersHavePassed) {
+            this.gameOver('All players have passed, there are no moves left!');
+            return;
+        }
+
+        this.updateStatus(`<@${userId}> passed their turn.`);
+    }
+
+    private generateStats() {
+        // number of words created
+        // number of turns
+        // longest word (and who played it)
+        // highest scoring word (and who played it)
+        // average word scores for each player
+        // number of words created by each player
+        
     }
 }
 

@@ -143,7 +143,7 @@ export class SlashCommandsController {
     @Post('scrabble')
     async handleScrabbleCommand(@Body() body: SlackCommandPostBody) {
         this.logger.log(`<@${body.user_id}|${body.user_name}> /scrabble "${body.text}"`);
-        const validCommands = ['new', 'tiles', 'play', 'challenge', 'reorder', 'help', 'exchange', 'undo'];
+        const validCommands = ['new', 'tiles', 'play', 'challenge', 'reorder', 'help', 'exchange', 'undo', 'pass'];
 
         if (body.text.trim() === '') {
             this.logger.warn('no text passed to /scrabble command');
@@ -179,6 +179,9 @@ export class SlashCommandsController {
                 break;
             case 'challenge':
                 this.scrabbleGame.challenge(body.channel_id, body.user_id);
+                break;
+            case 'pass':
+                this.scrabbleGame.pass(body.channel_id, body.user_id);
                 break;
             case 'help':
                 // TODO: scrabble help text
