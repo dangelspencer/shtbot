@@ -11,6 +11,7 @@ export interface GameState {
     tilePouch: string[];
     turns: ScrabbleTurn[];
     statusMessageTS: string;
+    inProgress: boolean;
 }
 
 export interface ScrabblePlayer {

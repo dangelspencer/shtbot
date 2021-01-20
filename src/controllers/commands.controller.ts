@@ -184,7 +184,10 @@ export class SlashCommandsController {
                 this.scrabbleGame.pass(body.channel_id, body.user_id);
                 break;
             case 'help':
-                // TODO: scrabble help text
+                return {
+                    response_type: 'ephemeral',
+                    text: '/scrabble command documentation in the shtbot README\nhttps://github.com/dangelspencer/shtbot'
+                }
             default:
                 return {
                     response_type: 'ephemeral',

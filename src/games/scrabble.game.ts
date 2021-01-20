@@ -58,6 +58,9 @@ export class ScrabbleGame {
         const oldFileName = `${gameDataFolder}/scrabble-${this.gameState.channel}.json`;
         const newFileName = `${gameDataFolder}/scrabble-${this.gameState.channel}-${new Date().getTime()}.json`;
         fs.renameSync(oldFileName, newFileName);
+        if (fs.existsSync(oldFileName)) {
+            fs.unlinkSync(oldFileName);
+        }
     }
 
     private initalizeGameState(channel: string) {
@@ -74,7 +77,8 @@ export class ScrabbleGame {
             },
             currentPlayer: 1,
             channel,
-            statusMessageTS: null
+            statusMessageTS: null,
+            inProgress: true
         };
         this.logger.debug(JSON.stringify(this.gameState));
     }
@@ -859,6 +863,8 @@ export class ScrabbleGame {
     }
 
     private gameOver(message: string = null) {
+        this.gameState.inProgress = false;
+
         // find player with the most points
         const playersByScore = this.getPlayersByScore();
         const winningPlayer = playersByScore[0];
@@ -874,9 +880,6 @@ export class ScrabbleGame {
         // get status message from last turn
         const lastStatusMessage = this.gameState.turns[this.gameState.turns.length -1].statusMessage;
         this.updateStatus(`${lastStatusMessage}\n\n\n${gameOverMessage}`);
-
-        // generate game stats
-        this.generateStats();
         this.saveGame();
 
         // delete game data
@@ -1054,12 +1057,14 @@ export class ScrabbleGame {
                 this.slackService.deleteMessage(this.gameState.channel, this.gameState.statusMessageTS);
             }
 
-            // save message timestamp
-            this.gameState.statusMessageTS = response.message.ts;
-            this.saveGame();
+            if (this.gameState.inProgress) {
+                // save message timestamp
+                this.gameState.statusMessageTS = response.message.ts;
+                this.saveGame();
 
-            if (showCurrentPlayerTileRack) {
-                this.displayTileRackForPlayer(this.gameState.currentPlayer);
+                if (showCurrentPlayerTileRack) {
+                    this.displayTileRackForPlayer(this.gameState.currentPlayer);
+                }
             }
         });
     }
@@ -1148,11 +1153,11 @@ export class ScrabbleGame {
         }
 
         // verify user was the last player
-        // const lastTurn = this.gameState.turns[this.gameState.turns.length - 1];
-        // if (playerIndex !== lastTurn.player) {
-        //     this.sendErrorMessage(userId, 'You can only undo your turns');
-        //     return;
-        // }
+        const lastTurn = this.gameState.turns[this.gameState.turns.length - 1];
+        if (playerIndex !== lastTurn.player) {
+            this.sendErrorMessage(userId, 'You can only undo your turns');
+            return;
+        }
 
         this.undoLastTurn();
         this.saveGame();
@@ -1302,24 +1307,7 @@ export class ScrabbleGame {
             this.gameOver('All players have passed, there are no moves left!');
             return;
         }
-
+        
         this.updateStatus(`<@${userId}> passed their turn.`);
     }
-
-    private generateStats() {
-        // number of words created
-        // number of turns
-        // longest word (and who played it)
-        // highest scoring word (and who played it)
-        // average word scores for each player
-        // number of words created by each player
-        
-    }
 }
-
-// TODO: handle creating new games in channels that already have a game
-// TODO: status message (for all users?)?
-// TODO: randomize next turn, game over, new game messages?
-// TODO: create command documentation
-// TODO: ephemeral response with command to avoid having to type the whole thing out again?
-// TODO: endgame statistics - highest scoring move, longest word
