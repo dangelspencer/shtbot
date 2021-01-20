@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ReactionAddedEvent, SlackEventPayload } from '../models/slack-event';
+import { ReactionAddedEvent, SlackEventPayload, MessageEvent } from '../models/slack-event';
 import { SlackService } from 'src/services/slack.service';
+import { SlackMessagePostBody } from 'src/models/slack-message';
 
 @Injectable()
 export class BotEventHelper {
@@ -16,6 +17,9 @@ export class BotEventHelper {
         const eventType = await this.getEventType(event);
 
         switch (eventType) {
+            case 'message':
+                await this.processMessageEvent(event.event as MessageEvent);
+                break;
             case 'reaction_added':
                 await this.processReactionAddedEvent(event.event as ReactionAddedEvent);
                 break;
@@ -23,6 +27,24 @@ export class BotEventHelper {
                 this.logger.verbose(`unhandled event type "${eventType}"`);
                 this.logger.debug(JSON.stringify(event));
                 return;
+        }
+    }
+
+    async processMessageEvent(event: MessageEvent) {
+        // restrict to specific company only channels
+        const validChannels = ['C09ASC613', 'C09ARS0SF', 'C8STXSFQW', 'CG6USEU1Z', 'C01DK4X1004', 'C01BZ69PW4S', 'CSB1Z9LR4', 'C013TM239SM'];
+
+        // we use polite words in this slack workspace
+        if (validChannels.includes(event.channel) && event.channel_type === 'channel' && event.user === 'U01CNL9EZGE' && event.text.split(' ').filter(x => x === 'SHT').length > 0) {
+            this.logger.warn('"someone" used the word "SHT" in a message');
+            const message: SlackMessagePostBody = {
+                text: '<@U01CNL9EZGE> Please use "poop" instead of "SHT" :thumbsup:',
+                channel: event.channel,
+                username: 'Some Idiot from HR',
+                icon_emoji: 'sht'
+            };
+
+            await this.slackService.postMessage(message);
         }
     }
 

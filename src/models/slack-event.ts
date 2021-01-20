@@ -1,4 +1,4 @@
-export class SlackEventPayload<T> {
+export interface SlackEventPayload<T> {
     token: string;
     team_id: string;
     api_app_id: string;
@@ -11,7 +11,7 @@ export class SlackEventPayload<T> {
     challenge?: string;
 }
 
-export class ReactionAddedEvent {
+export interface ReactionAddedEvent {
     type: string;
     user: string;
     item: {
@@ -24,3 +24,12 @@ export class ReactionAddedEvent {
     event_ts: string;
 }
 
+export interface MessageEvent {
+    type: string;
+    channel: string;
+    user: string;
+    text: string;
+    ts: string;
+    event_ts: string;
+    channel_type: string;
+}
