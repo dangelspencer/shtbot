@@ -5,6 +5,7 @@ import { SlackService } from '../services/slack.service';
 import { TextHelper } from '../helpers/text.helper';
 import { MessageHelper } from '../helpers/message.helper';
 import { GiphyService } from 'src/services/giphy.service';
+import { ScrabbleGame } from 'src/games/scrabble.game';
 
 @Controller('api/slash-commands')
 export class SlashCommandsController {
@@ -13,6 +14,7 @@ export class SlashCommandsController {
     constructor(
         private readonly giphyService: GiphyService,
         private readonly messageHelper: MessageHelper,
+        private readonly scrabbleGame: ScrabbleGame,
         private readonly slackService: SlackService,
         private readonly textHelper: TextHelper
     ) {}
@@ -83,7 +85,7 @@ export class SlashCommandsController {
         const message: SlackMessagePostBody = {
             text: convertedText,
             channel: body.channel_id,
-            username: user.profile.display_name,
+            username: user.profile.display_name == null || user.profile.display_name == '' ? user.profile.real_name_normalized : user.profile.display_name,
             icon_url: user.profile.image_original
         };
 
@@ -139,14 +141,70 @@ export class SlashCommandsController {
     }
 
     @Post('scrabble')
-    async postScrabbleTilesAsUser(@Body() body: SlackCommandPostBody) {
+    async handleScrabbleCommand(@Body() body: SlackCommandPostBody) {
         this.logger.log(`<@${body.user_id}|${body.user_name}> /scrabble "${body.text}"`);
+        const validCommands = ['new', 'tiles', 'play', 'challenge', 'reorder', 'help', 'exchange', 'undo', 'pass'];
 
         if (body.text.trim() === '') {
             this.logger.warn('no text passed to /scrabble command');
+
+            // TODO: add command help text
             return {
                 response_type: 'ephemeral',
-                text: 'Invalid command format - usage: /scrabble <text>'
+                text: `Invalid command format: must contain a valid sub-command (${validCommands.join(',')})`
+            };
+        }
+
+        const commandParts = body.text.split(' ');
+        const subCommand = commandParts[0].toLowerCase();
+        switch (subCommand) {
+            case 'new':
+                const userIds = this.messageHelper.parseMentions(body.text).filter(x => x.type === '@').map(x => x.id);
+                this.scrabbleGame.newGame(body.channel_id, body.user_id, userIds);
+                break;
+            case 'tiles':
+                this.scrabbleGame.displayTileRack(body.channel_id, body.user_id);
+                break;
+            case 'reorder':
+                this.scrabbleGame.reorderTiles(body.channel_id, body.user_id, body.text.toLowerCase().replace('reorder', '').trim());
+                break;
+            case 'exchange':
+                this.scrabbleGame.exchangeTiles(body.channel_id, body.user_id, body.text.toLowerCase().replace('exchange', '').trim());
+                break;
+            case 'play':
+                this.scrabbleGame.playWord(body.channel_id, body.user_id, body.text.toLowerCase().replace('play', '').trim());
+                break;
+            case 'undo':
+                this.scrabbleGame.undo(body.channel_id, body.user_id);
+                break;
+            case 'challenge':
+                this.scrabbleGame.challenge(body.channel_id, body.user_id);
+                break;
+            case 'pass':
+                this.scrabbleGame.pass(body.channel_id, body.user_id);
+                break;
+            case 'help':
+                return {
+                    response_type: 'ephemeral',
+                    text: '/scrabble command documentation in the shtbot README\nhttps://github.com/dangelspencer/shtbot'
+                }
+            default:
+                return {
+                    response_type: 'ephemeral',
+                    text: `Invalid sub-command: valid sub-commands are ${validCommands.join(',')}`
+                };
+        }
+    }
+
+    @Post('tile')
+    async postScrabbleTilesAsUser(@Body() body: SlackCommandPostBody) {
+        this.logger.log(`<@${body.user_id}|${body.user_name}> /tile "${body.text}"`);
+
+        if (body.text.trim() === '') {
+            this.logger.warn('no text passed to /tile command');
+            return {
+                response_type: 'ephemeral',
+                text: 'Invalid command format - usage: /tile <text>'
             };
         }
 
@@ -159,7 +217,7 @@ export class SlashCommandsController {
         const message: SlackMessagePostBody = {
             text: convertedText,
             channel: body.channel_id,
-            username: user.profile.display_name,
+            username: user.profile.display_name == null || user.profile.display_name == '' ? user.profile.real_name_normalized : user.profile.display_name,
             icon_url: user.profile.image_original
         };
 

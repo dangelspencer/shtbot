@@ -9,7 +9,7 @@ export class MessageHelper {
                 const data = mention.split('|');
                 const details = {
                     type: data[0].substr(0, 1),
-                    id: data[0].replace('@', ''),
+                    id: data[0].replace('@', '').replace('#', ''),
                     username: null
                 };
     

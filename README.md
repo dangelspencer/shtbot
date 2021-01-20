@@ -5,7 +5,7 @@ SHT slackbot
 * /fire - tells a user to "GTFO" with a gif from Giphy (Giphy Beta API key is limited to 42 requests an hour and 1000 requests a day)
 * /mock - convert text to Mocking SpongeBob format
 * /sayas - impersonates another workspace user
-* /scrabble - converts and displays text as scrabble emojis (requires scrabble emojis to be present in slack workspace)
+* /tile - converts and displays text as scrabble emojis (requires scrabble emojis to be present in slack workspace)
 
 ## Other Features
 * delete bot messages by reacting with the 'x' emoji
@@ -38,3 +38,17 @@ How to setup a local development environment
 | BOT_USER_TOKEN | string | | authentication token for slack API |
 | SLACK_SIGNING_SECRET | string | | secret used to validate slack webhook requests | 
 | GIPHY_API_KEY | string | | api key for Giphy |
+| GAME_DATA_DIRECTORY | string | ./data/games | controls where game data is stored |
+
+## Games
+### Scrabble
+* `/scrabble new <tagged player list>`: creates a new game with 1-4 players
+* `/scrabble play (startX, startY) (endX, endY) <word> <replacements>`: plays the specified word on the board
+  * replacements are only used if playing a blank tile
+  * x values are 0-14 left to right
+  * y values are 0-14 from top to bottom
+* `/scrabble exchange <tiles>`: returns specified tiles to the tile pouch and draws new ones
+* `/scrabble challenge`: challenges the last word played
+* `/scrabble pass`: pass your current turn (though you'd probably want to exchange tiles if there are still some left)
+* `/scrabble tiles`: displays your tile rack
+* `/scrabble reorder <tiles>`: reorders your tile rack

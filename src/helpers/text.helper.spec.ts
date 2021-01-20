@@ -32,4 +32,22 @@ describe('TextHelper', () => {
             expect(textHelper.textToMockingText('<#U5ATQMQUW|testchannel> test with space')).toBe('<#U5ATQMQUW|testchannel> tEsT wItH sPaCe');
         });
     });
+
+    describe('scrabbleTilesToText', () => {
+        it('converts "scrable" correctly', () => {
+            expect(textHelper.scrabbleTilesToText(':s::c::r::aa::bb::bb::l::e:')).toBe('scrabble');
+        });
+        it('converts "test" correctly', () => {
+            expect(textHelper.scrabbleTilesToText(':t::e::s::t:')).toBe('test');
+        });
+        it('converts "test with space" correctly', () => {
+            expect(textHelper.scrabbleTilesToText(':t::e::s::t: :w::i::t::h: :s::p::aa::c::e:')).toBe('test with space');
+        });
+        it('doesn\'t convert user tags', () => {
+            expect(textHelper.scrabbleTilesToText('<@U5ATQMQUW|testuser> :t::e::s::t: :w::i::t::h: :s::p::aa::c::e:')).toBe('<@U5ATQMQUW|testuser> test with space');
+        });
+        it('doesn\'t convert channel tags', () => {
+            expect(textHelper.scrabbleTilesToText('<#U5ATQMQUW|testchannel> :t::e::s::t: :w::i::t::h: :s::p::aa::c::e:')).toBe('<#U5ATQMQUW|testchannel> test with space');
+        });
+    });
 });

@@ -1,4 +1,7 @@
 const config = {
+    games: {
+        dataDirectory: process.env.GAME_DATA_DIRECTORY || './data/games'
+    },
     giphy: {
         apiKey: process.env.GIPHY_API_KEY
     },
