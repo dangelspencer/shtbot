@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { GameState, ScrabblePlayer, BoardSpace, WordDirection, Tile, BoardTile, ScrabbleTurnType, ScrabblePlayWordTurn, ScrabbleExchangeTurn, ScrabbleChallengeTurn } from 'src/models/scrabble';
+import { GameState, ScrabblePlayer, BoardSpace, WordDirection, Tile, BoardTile, ScrabbleTurnType, ScrabblePlayWordTurn, ScrabbleExchangeTurn, ScrabbleChallengeTurn, ScrabblePassTurn } from 'src/models/scrabble';
 import { SlackService } from 'src/services/slack.service';
 import { config } from '../config';
 import * as fs from 'fs';
@@ -870,16 +870,17 @@ export class ScrabbleGame {
         const winningPlayer = playersByScore[0];
 
         // create game over message
-        let gameOverMessage = message;
-        if (message == null) {
-            gameOverMessage = `${this.textHelper.textToScrabbleTiles('game over')}`;
+        let gameOverMessage = `${this.textHelper.textToScrabbleTiles('game over')}`;
+        if (message != null) {
+            gameOverMessage += `\n\n${message}`;
         }
 
-        gameOverMessage += `\n<@${winningPlayer.userId}> wins with ${winningPlayer.points} points!`;
+        gameOverMessage += `\n\n<@${winningPlayer.userId}> wins with ${winningPlayer.points} points!`;
 
         // get status message from last turn
         const lastStatusMessage = this.gameState.turns[this.gameState.turns.length -1].statusMessage;
         this.updateStatus(`${lastStatusMessage}\n\n\n${gameOverMessage}`);
+        
         this.saveGame();
 
         // delete game data
@@ -1025,7 +1026,9 @@ export class ScrabbleGame {
         let text = message;
 
         // show current player
-        text += `\n\n<@${this.gameState.players[this.gameState.currentPlayer.toString()].userId}> is up!`
+        if (this.gameState.inProgress) {
+            text += `\n\n<@${this.gameState.players[this.gameState.currentPlayer.toString()].userId}> is up!`
+        }
 
         // show board
         text += `\n\n${this.getBoardDisplayString()}`;
@@ -1271,7 +1274,7 @@ export class ScrabbleGame {
     }
 
     pass(channelId: string, userId: string) {
-        this.logger.verbose(`exchanging tiles for user: ${userId}`);
+        this.logger.verbose(`passing for user: ${userId}`);
         if (!this.loadGame(channelId)) {
             this.sendErrorMessage(userId, 'There is no active game in this channel', channelId);
             return;
@@ -1292,6 +1295,15 @@ export class ScrabbleGame {
         }
 
         this.gameState.players[playerIndex.toString()].passedLastTurn = true;
+        const turn: ScrabblePassTurn = {
+            type: ScrabbleTurnType.Pass,
+            userId,
+            player: playerIndex,
+            passed: true,
+            statusMessage: `<@${userId}> passed their turn.`
+        };
+        this.gameState.turns.push(turn);
+
         this.incrementTurn();
         this.saveGame();
 
@@ -1308,6 +1320,6 @@ export class ScrabbleGame {
             return;
         }
         
-        this.updateStatus(`<@${userId}> passed their turn.`);
+        this.updateStatus(turn.statusMessage);
     }
 }

@@ -81,4 +81,8 @@ export interface ScrabbleChallengeTurn extends ScrabbleTurn {
     successful: boolean;
 }
 
+export interface ScrabblePassTurn extends ScrabbleTurn {
+    passed: boolean;
+}
+
 // export interface ScrabblePassTurn extends ScrabbleTurn {}
