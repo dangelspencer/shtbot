@@ -1073,6 +1073,7 @@ export class ScrabbleGame {
     }
 
     private sendErrorMessage(userId: string, message: string, channel = null) {
+        this.logger.warn(message);
         const messageData: SlackEphemeralMessagePostBody = {
             user: userId,
             channel: channel || this.gameState.channel,
@@ -1088,12 +1089,14 @@ export class ScrabbleGame {
             let newY = y;
             
             // find beginning of potential word
-            while (this.gameState.board[x][newY] != null) {
+            while (this.gameState.board[x][newY] != null && newY > 0) {
                 newY -= 1;
             };
 
             // adjust to get actual start of word
-            newY += 1;
+            if (this.gameState.board[x][newY] == null) {
+                newY += 1;
+            }
 
             // save new word
             let word = '';
@@ -1115,12 +1118,14 @@ export class ScrabbleGame {
             let newX = x;
             
             // find beginning of potential word
-            while (this.gameState.board[newX][y] != null) {
+            while (this.gameState.board[newX][y] != null && newX > 0) {
                 newX -= 1;
             };
 
             // adjust to get actual start of word
-            newX += 1;
+            if (this.gameState.board[newX][y] == null) {
+                newX += 1;
+            }
 
             // save new word
             let word = '';
