@@ -680,7 +680,7 @@ export class ScrabbleGame {
             }
 
             // remove played tile from player's tile rack
-            if (indexInTileRack !== -1) {
+            if (!isOnBoard && indexInTileRack !== -1) {
                 playerTileRack.splice(indexInTileRack, 1);
             }
         }
