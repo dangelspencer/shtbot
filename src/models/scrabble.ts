@@ -20,6 +20,7 @@ export interface ScrabblePlayer {
     points: number;
     losesNextTurn: boolean;
     passedLastTurn: boolean;
+    adjustedPoints: number;
 }
 
 export enum BoardSpace {

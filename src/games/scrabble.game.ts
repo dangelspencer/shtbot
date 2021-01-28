@@ -90,7 +90,8 @@ export class ScrabbleGame {
             userId,
             tileRack: [],
             losesNextTurn: false,
-            passedLastTurn: false
+            passedLastTurn: false,
+            adjustedPoints: 0
         };
 
         this.gameState.players[playerIndex.toString()] = player;
@@ -865,8 +866,23 @@ export class ScrabbleGame {
     private gameOver(message: string = null) {
         this.gameState.inProgress = false;
 
+        // adjust player points based on remaining tiles
+        for (let i = 1; i <= 4; i++) {
+            if (this.gameState.players[i.toString()] != null) {
+                let adjustedPoints = this.gameState.players[i.toString()].points;
+                const tileRack = this.gameState.players[i.toString()].tileRack;
+                
+                for (const tile of tileRack) {
+                    const tilePoints = this.getPointsForLetter(tile);
+                    adjustedPoints -= tilePoints;
+                }
+
+                this.gameState.players[i.toString()].adjustedPoints = adjustedPoints;
+            }
+        }
+
         // find player with the most points
-        const playersByScore = this.getPlayersByScore();
+        const playersByScore = this.getPlayersByAdjustedScore();
         const winningPlayer = playersByScore[0];
 
         // create game over message
@@ -887,7 +903,7 @@ export class ScrabbleGame {
         this.deleteGameData();
     }
 
-    private getPlayersByScore(): ScrabblePlayer[] {
+    private getPlayersByAdjustedScore(): ScrabblePlayer[] {
         const players = [];
         for (let i = 1; i <= 4; i++) {
             if (this.gameState.players[i.toString()] != null) {
@@ -895,7 +911,7 @@ export class ScrabbleGame {
             }
         }
 
-        return players.sort((a, b) => b.points - a.points);
+        return players.sort((a, b) => b.adjustedPoints - a.adjustedPoints);
     }
 
     private undoPlayWordTurn() {
