@@ -129,10 +129,15 @@ export class SlashCommandsController {
         this.logger.verbose(`fetching user by id: ${body.user_id}`);
         const user = await this.slackService.getUserById(mentions[0].id);
 
+        let username = user.real_name;
+        if (username == null || username === '') {
+            username = user.name;
+        }
+
         const message: SlackMessagePostBody = {
             text: body.text.substr(body.text.indexOf(' ')).trim(),
             channel: body.channel_id,
-            username: user.profile.display_name == null || user.profile.display_name == '' ? user.profile.real_name_normalized : user.profile.display_name,
+            username: username,
             icon_url: user.profile.image_original
         };
 
