@@ -35,16 +35,19 @@ export class BotEventHelper {
         const validChannels = ['C09ASC613', 'C09ARS0SF', 'C8STXSFQW', 'CG6USEU1Z', 'C01DK4X1004', 'C01BZ69PW4S', 'CSB1Z9LR4', 'C013TM239SM'];
 
         // we use polite words in this slack workspace
-        if (validChannels.includes(event.channel) && event.channel_type === 'channel' && event.user === 'U01CNL9EZGE' && event.text.split(' ').filter(x => x.toLowerCase() === 'sht').length > 0) {
-            this.logger.warn('"someone" used the word "SHT" in a message');
-            const message: SlackMessagePostBody = {
-                text: '<@U01CNL9EZGE> Please use "poop" instead of "SHT" :thumbsup:',
-                channel: event.channel,
-                username: 'Some Idiot from HR',
-                icon_emoji: 'sht'
-            };
-
-            await this.slackService.postMessage(message);
+        if (validChannels.includes(event.channel) && event.channel_type === 'channel' && event.text.split(' ').filter(x => x.toLowerCase() === 'sht').length > 0) {
+            // if U01CNL9EZGE uses "SHT" or a 1/6 chance for someone else
+            if (event.user === 'U01CNL9EZGE' || Math.floor((Math.random() * 6) + 1) === 1) {
+                this.logger.warn('someone used the word "SHT" in a message');
+                const message: SlackMessagePostBody = {
+                    text: `<@${event.user}> Please use "poop" instead of "SHT" :thumbsup:`,
+                    channel: event.channel,
+                    username: 'Some Idiot from HR',
+                    icon_emoji: 'sht'
+                };
+    
+                await this.slackService.postMessage(message);
+            }
         }
     }
 
