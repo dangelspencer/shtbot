@@ -38,7 +38,7 @@ export class BotEventHelper {
         if (validChannels.includes(event.channel) && event.channel_type === 'channel' && event.text.split(' ').filter(x => x.toLowerCase() === 'sht').length > 0) {
             // if U01CNL9EZGE uses "SHT" or a 1/6 chance for someone else
             // also ignore the message if it's from shtbot
-            if (event.user !== 'U015BSC329J' && (event.user === 'U01CNL9EZGE' || Math.floor((Math.random() * 6) + 1) === 1)) {
+            if (event.user !== 'U015BSC329J' && (event.user === 'U01CNL9EZGE' || Math.floor((Math.random() * 2) + 1) === 1)) {
                 this.logger.warn('someone used the word "SHT" in a message');
 
                 // swap word in original message
@@ -95,9 +95,18 @@ export class BotEventHelper {
     async getReactionRandomizationFactor(reaction: string): Promise<number> {
         switch (reaction) {
             case 'shankduck':
+            case 'watching':
+            case 'bashful-shankduck':
+            case 'illuminati':
                 return 5;
             case 'badalec':
                 return 10;
+            case 'no-cap':
+            case 'billed_cap':
+            case 'pleading_face':
+            case 'heart':
+            case 'heart_eyes': 
+            case 'heart_eyes_cat':
             case '100-oof':
             case 'f':
             case 'eyes':
@@ -108,9 +117,9 @@ export class BotEventHelper {
             case 'illuminati':
             case 'brian-wow':
             case 'edgarfeelsbad':
-                return 100;
+                return 20;
             default:
-                return 500;
+                return 100;
         }
     }
 }
