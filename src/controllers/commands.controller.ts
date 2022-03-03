@@ -134,12 +134,19 @@ export class SlashCommandsController {
             username = user.name;
         }
 
-        const message: SlackMessagePostBody = {
+        let message: SlackMessagePostBody = {
             text: body.text.substr(body.text.indexOf(' ')).trim(),
             channel: body.channel_id,
             username: username,
             icon_url: user.profile.image_original
         };
+
+        if (Math.floor(Math.random() * 100) + 1 === 1) {
+            message = {
+                text: `<@${body.user_id}|${body.user_name}> tried to use /sayas <@${user.id}> "${body.text.substr(body.text.indexOf(' ')).trim()}" but idc`,
+                channel: body.channel_id,
+            };
+        }
 
         this.logger.verbose(`posting message to channel as user <@${mentions[0].id}|${mentions[0].username}>`);
         await this.slackService.postMessage(message);
