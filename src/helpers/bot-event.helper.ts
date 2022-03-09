@@ -41,6 +41,8 @@ export class BotEventHelper {
                 return 'brittney-agrny';
             case 'US7BDEPQQ':
                 return 'ryan-agrny';
+            case 'U2AK47A48':
+                return 'spencer-angry';
             default:
                 return null;
         }
@@ -54,6 +56,15 @@ export class BotEventHelper {
 
         if (validChannels.includes(event.channel)) {
             // we use polite words in this slack workspace (sht only)
+
+            // 20% chance of adding a angry reaction when someone talks
+            if (Math.random() < 0.25) {
+                const reaction = this.mapUserIDToEmoji(event.user);
+                if (reaction) {
+                    await this.slackService.addReactionToMessage(event.channel, event.ts, reaction);
+                }
+            }
+
             if (event.text.split(' ').filter(x => x.toLowerCase() === 'sht').length > 0) {
                 // if U01CNL9EZGE uses "SHT" or a 50% chance for someone else
                 // also ignore the message if it's from shtbot
@@ -80,7 +91,7 @@ export class BotEventHelper {
                     };
         
                     await this.slackService.postMessage(message);
-                }
+                } 
             // add 'angry' reactions when people are mentioned
             } else if (mentions.length > 0) {
                 for (const mentionId of mentions.map(x => x.id)) {
