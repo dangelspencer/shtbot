@@ -2,12 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ReactionAddedEvent, SlackEventPayload, MessageEvent } from '../models/slack-event';
 import { SlackService } from 'src/services/slack.service';
 import { SlackMessagePostBody } from 'src/models/slack-message';
+import { MessageHelper } from './message.helper';
 
 @Injectable()
 export class BotEventHelper {
     private readonly logger = new Logger(BotEventHelper.name);
 
-    constructor (private readonly slackService: SlackService) {}
+    constructor (private readonly slackService: SlackService, private readonly messageHelper: MessageHelper) {}
 
     async getEventType(event: SlackEventPayload<any>): Promise<string> {
         return `${event.event.type}${event.event.subtype ? `:${event.event.subtype}` : ''}`;
@@ -30,37 +31,64 @@ export class BotEventHelper {
         }
     }
 
+    mapUserIDToEmoji(userId: string) {
+        switch (userId) {
+            case 'U01CNL9EZGE':
+                return 'jill-angry';
+            case 'U025BBF136J':
+                return 'jordan-angry';
+            case 'U01LGSMLSNA':
+                return 'brittney-agrny';
+            case 'US7BDEPQQ':
+                return 'ryan-agrny';
+            default:
+                return null;
+        }
+    }
+
     async processMessageEvent(event: MessageEvent) {
         // restrict to specific company only channels
         const validChannels = ['C09ASC613', 'C09ARS0SF', 'C8STXSFQW', 'CG6USEU1Z', 'C01DK4X1004', 'C01BZ69PW4S', 'CSB1Z9LR4', 'C013TM239SM'];
 
-        // we use polite words in this slack workspace
-        if (validChannels.includes(event.channel) && event.channel_type === 'channel' && event.text.split(' ').filter(x => x.toLowerCase() === 'sht').length > 0) {
-            // if U01CNL9EZGE uses "SHT" or a 1/6 chance for someone else
-            // also ignore the message if it's from shtbot
-            if (event.user !== 'U015BSC329J' && (event.user === 'U01CNL9EZGE' || Math.floor((Math.random() * 2) + 1) === 1)) {
-                this.logger.warn('someone used the word "SHT" in a message');
+        const mentions = this.messageHelper.parseMentions(event.text);
 
-                // swap word in original message
-                const convertedMessage = event.text.split(' ').map(word => {
-                    if (word === 'sht') {
-                        return '*poop*';
-                    } else if (word === 'SHT') {
-                        return '*POOP*';
+        if (validChannels.includes(event.channel)) {
+            // we use polite words in this slack workspace (sht only)
+            if (event.text.split(' ').filter(x => x.toLowerCase() === 'sht').length > 0) {
+                // if U01CNL9EZGE uses "SHT" or a 50% chance for someone else
+                // also ignore the message if it's from shtbot
+                if (event.user !== 'U015BSC329J' && (event.user === 'U01CNL9EZGE' || Math.floor((Math.random() * 2) + 1) === 1)) {
+                    this.logger.warn('someone used the word "SHT" in a message');
+
+                    // swap word in original message
+                    const convertedMessage = event.text.split(' ').map(word => {
+                        if (word === 'sht') {
+                            return '*poop*';
+                        } else if (word === 'SHT') {
+                            return '*POOP*';
+                        }
+
+                        return word;
+                    }).join(' ');
+
+                    // send HR response
+                    const message: SlackMessagePostBody = {
+                        text: `<@${event.user}> Please use "poop" instead of "SHT" :thumbsup:\n> ${convertedMessage}`,
+                        channel: event.channel,
+                        username: 'Some Idiot from HR',
+                        icon_emoji: 'sht'
+                    };
+        
+                    await this.slackService.postMessage(message);
+                }
+            // add 'angry' reactions when people are mentioned
+            } else if (mentions.length > 0) {
+                for (const mentionId of mentions.map(x => x.id)) {
+                    const reaction = this.mapUserIDToEmoji(mentionId);
+                    if (reaction != null && Math.floor((Math.random() * 3) + 1) === 1) {
+                        await this.slackService.addReactionToMessage(event.channel, event.ts, reaction);
                     }
-
-                    return word;
-                }).join(' ');
-
-                // send HR response
-                const message: SlackMessagePostBody = {
-                    text: `<@${event.user}> Please use "poop" instead of "SHT" :thumbsup:\n> ${convertedMessage}`,
-                    channel: event.channel,
-                    username: 'Some Idiot from HR',
-                    icon_emoji: 'sht'
-                };
-    
-                await this.slackService.postMessage(message);
+                }
             }
         }
     }
