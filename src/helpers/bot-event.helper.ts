@@ -57,7 +57,7 @@ export class BotEventHelper {
         if (validChannels.includes(event.channel)) {
             // we use polite words in this slack workspace (sht only)
 
-            // 20% chance of adding a angry reaction when someone talks
+            // 25% chance of adding a angry reaction when someone talks
             if (Math.random() < 0.25) {
                 const reaction = this.mapUserIDToEmoji(event.user);
                 if (reaction) {
