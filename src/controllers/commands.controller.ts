@@ -4,8 +4,8 @@ import { SlackMessagePostBody } from '../models/slack-message';
 import { SlackService } from '../services/slack.service';
 import { TextHelper } from '../helpers/text.helper';
 import { MessageHelper } from '../helpers/message.helper';
-import { GiphyService } from 'src/services/giphy.service';
-import { ScrabbleGame } from 'src/games/scrabble.game';
+import { GiphyService } from '../services/giphy.service';
+import { ScrabbleGame } from '../games/scrabble.game';
 
 @Controller('api/slash-commands')
 export class SlashCommandsController {

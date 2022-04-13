@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { GameState, ScrabblePlayer, BoardSpace, WordDirection, Tile, BoardTile, ScrabbleTurnType, ScrabblePlayWordTurn, ScrabbleExchangeTurn, ScrabbleChallengeTurn, ScrabblePassTurn } from 'src/models/scrabble';
-import { SlackService } from 'src/services/slack.service';
+import { GameState, ScrabblePlayer, BoardSpace, WordDirection, Tile, BoardTile, ScrabbleTurnType, ScrabblePlayWordTurn, ScrabbleExchangeTurn, ScrabbleChallengeTurn, ScrabblePassTurn } from '../models/scrabble';
+import { SlackService } from '../services/slack.service';
 import { config } from '../config';
 import * as fs from 'fs';
-import { SlackMessagePostBody, SlackEphemeralMessagePostBody } from 'src/models/slack-message';
-import { TextHelper } from 'src/helpers/text.helper';
+import { SlackMessagePostBody, SlackEphemeralMessagePostBody } from '../models/slack-message';
+import { TextHelper } from '../helpers/text.helper';
 
 @Injectable()
 export class ScrabbleGame {

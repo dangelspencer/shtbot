@@ -6,6 +6,8 @@ import { TextHelper } from '../helpers/text.helper';
 import { SlackMessagePostBody } from '../models/slack-message';
 import { SlackUserModel } from '../models/slack-responses';
 import { SlackCommandPostBody } from '../models/slack-command';
+import { GiphyService } from '../services/giphy.service';
+import { ScrabbleGame } from '../games/scrabble.game';
 
 describe('AppController', () => {
     let messageHelper: MessageHelper;
@@ -16,7 +18,7 @@ describe('AppController', () => {
     beforeEach(async () => {
         const moduleRef = await Test.createTestingModule({
             controllers: [SlashCommandsController],
-            providers: [MessageHelper, SlackService, TextHelper]
+            providers: [GiphyService, MessageHelper, ScrabbleGame, SlackService, TextHelper]
         }).compile();
 
         messageHelper = moduleRef.get<MessageHelper>(MessageHelper);
