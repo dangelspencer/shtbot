@@ -91,7 +91,7 @@ export class BotEventHelper {
                     };
         
                     await this.slackService.postMessage(message);
-                } 
+                }
             // add 'angry' reactions when people are mentioned
             } else if (mentions.length > 0) {
                 for (const mentionId of mentions.map(x => x.id)) {
