@@ -101,10 +101,6 @@ export class BotEventHelper {
                     }
                 }
             }
-
-            if (event.user === 'U01CNL9EZGE') {
-                await this.slackService.addReactionToMessage(event.channel, event.ts, 'scrum-certified');
-            }
         }
     }
 
