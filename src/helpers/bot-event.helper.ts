@@ -80,7 +80,7 @@ export class BotEventHelper {
                         }
 
                         return word;
-                    }).join(' ');
+                    }).join(' ').replace('\n', '\n> ');
 
                     // send HR response
                     const message: SlackMessagePostBody = {
